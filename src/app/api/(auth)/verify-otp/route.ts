@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { NextRequest } from 'next/server'
 import { NextError, NextSuccess } from '~/lib/next-response'
-import { VerifyOTPType } from '~/utils/types'
 
 const API_URL = process.env.API_URL + '/api/auth'
 

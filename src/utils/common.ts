@@ -22,8 +22,29 @@ export const formatUSD = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 })
 
-export const showError = (error: any): string =>
-  error.response?.data?.title || error.response?.data || error.message || 'Đã xảy ra lỗi'
+type error = {
+  response?: {
+    data?: {
+      title?: string
+      message?: string
+    }
+    message?: string
+  }
+  message?: string
+}
+
+export const showError = (error: error): string => {
+  if (typeof error.response?.data === 'string') {
+    return error.response?.data || error.response?.message || error.message || 'Đã xảy ra lỗi'
+  }
+  return (
+    error.response?.data?.title ||
+    error.response?.data?.message ||
+    error.response?.message ||
+    error.message ||
+    'Đã xảy ra lỗi'
+  )
+}
 
 export const convertToVietnamPhoneNumber = (phoneNumber: string): string => {
   const cleaned = ('' + phoneNumber).replace(/\D/g, '')
@@ -42,3 +63,6 @@ export const convertToVietnamPhoneNumber = (phoneNumber: string): string => {
 
   return phoneNumber
 }
+
+export const toNextImageLink = (url: string | undefined): string =>
+  url ? '/api/images?imageUrl=' + encodeURIComponent(url) : ''

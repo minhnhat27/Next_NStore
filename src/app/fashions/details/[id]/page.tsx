@@ -60,6 +60,7 @@ const ProductDetails: React.FC = () => {
           <div className="space-y-2">
             <Badge.Ribbon text="-20%" color="red" rootClassName="flex">
               <Image
+                alt="product"
                 rootClassName="h-[27rem] w-full"
                 className="object-cover object-center h-full w-full"
                 src={currentImage}
@@ -72,6 +73,7 @@ const ProductDetails: React.FC = () => {
             /> */}
             <Carousel arrows dots={false} centerMode slidesToShow={4} className="w-full">
               <Image
+                alt="product"
                 rootClassName="w-16 outline-none"
                 onClick={() => setCurrentImage('/images/product.png')}
                 className="object-cover object-center h-20 px-1 cursor-pointer hover:border hover:border-red-700"
@@ -79,6 +81,7 @@ const ProductDetails: React.FC = () => {
                 preview={false}
               />
               <Image
+                alt="product"
                 rootClassName="w-16 outline-none"
                 onClick={() => setCurrentImage('/images/Banner.png')}
                 className="object-cover object-center h-20 px-1 cursor-pointer hover:border hover:border-red-700"
@@ -86,6 +89,7 @@ const ProductDetails: React.FC = () => {
                 preview={false}
               />
               <Image
+                alt="product"
                 rootClassName="w-16 outline-none"
                 onClick={() => setCurrentImage('/images/product.png')}
                 className="object-cover object-center h-20 px-1 cursor-pointer hover:border hover:border-red-700"
@@ -93,6 +97,7 @@ const ProductDetails: React.FC = () => {
                 preview={false}
               />
               <Image
+                alt="product"
                 rootClassName="w-16 outline-none"
                 onClick={() => setCurrentImage('/images/product.png')}
                 className="object-cover object-center h-20 px-1 cursor-pointer hover:border hover:border-red-700"
@@ -100,6 +105,7 @@ const ProductDetails: React.FC = () => {
                 preview={false}
               />
               <Image
+                alt="product"
                 rootClassName="w-16 outline-none"
                 onClick={() => setCurrentImage('/images/product.png')}
                 className="object-cover object-center h-20 px-1 cursor-pointer hover:border hover:border-red-700"

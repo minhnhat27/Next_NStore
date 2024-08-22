@@ -2,29 +2,35 @@
 
 import { Button, Divider, Flex, Form, FormProps, Image, Input, Typography } from 'antd'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useAuth } from '~/components/auth-provider'
-import AuthService from '~/lib/service/auth-service'
+import AuthService from '~/lib/proxy-server-service/auth-service'
 
 import { showError } from '~/utils/common'
-import { AuthActions, LoginType } from '~/utils/types'
+import { AuthActions } from '~/utils/auth-actions'
 
 const { Title } = Typography
 
-const Login: React.FC = () => {
+export default function Login() {
   const { dispatch } = useAuth()
   const router = useRouter()
+
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect')
+
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
 
   const handleSubmitLogin: FormProps<LoginType>['onFinish'] = async (values: LoginType) => {
-    setLoading(true)
     try {
-      await AuthService.login(values)
-      dispatch(AuthActions.LOGIN)
-      router.replace('/')
+      setLoading(true)
+      const res = await AuthService.login(values)
+      dispatch(AuthActions.LOGIN(res.data))
+
+      const redirectTo = redirect || '/'
+      router.replace(redirectTo)
     } catch (error: any) {
       form.setFields([
         {
@@ -88,10 +94,9 @@ const Login: React.FC = () => {
         Hoặc tiếp tục với
       </Divider>
       <Flex justify="center" align="center" className="space-x-2">
-        <Image src="/images/Facebook_Logo.png" width={35} preview={false} />
-        <Image src="/images/Google_Logo.png" width={35} preview={false} />
+        <Image alt="logo" src="/images/Facebook_Logo.png" width={35} preview={false} />
+        <Image alt="logo" src="/images/Google_Logo.png" width={35} preview={false} />
       </Flex>
     </>
   )
 }
-export default Login

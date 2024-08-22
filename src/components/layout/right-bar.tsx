@@ -1,16 +1,25 @@
-import { Badge, Drawer, Dropdown, Flex, Input, MenuProps, Tooltip } from 'antd'
+'use client'
+
+import { Badge, Drawer, Dropdown, Flex, Input, MenuProps } from 'antd'
 import { FaHeart, FaSearch, FaShoppingBag, FaUser } from 'react-icons/fa'
 import { useAuth } from '../auth-provider'
 import Link from 'next/link'
-import { AuthActions } from '~/utils/types'
-import { logout } from '~/lib/auth-session'
+import { logout } from '~/lib/auth-service'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
+import { AuthActions } from '~/utils/auth-actions'
+import { UserOutlined } from '@ant-design/icons'
 
-const dropdownItems = (handleLogout?: () => void): MenuProps['items'] => [
+const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['items'] => [
   {
     key: '/profile',
-    label: <Link href="/profile">Trang cá nhân</Link>,
+    label: (
+      <Link href="/profile">
+        <span>
+          <UserOutlined /> {name}
+        </span>
+      </Link>
+    ),
   },
   {
     type: 'divider',
@@ -43,25 +52,26 @@ const RightBar: React.FC = () => {
           className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 "
         />
         {state.isAuthenticated ? (
-          <Dropdown menu={{ items: dropdownItems(handleLogout) }}>
+          <Dropdown
+            menu={{ items: dropdownItems(state.userInfo?.fullName, handleLogout) }}
+            trigger={['click']}
+          >
             <span className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 ">
               <FaUser />
             </span>
           </Dropdown>
         ) : (
-          <Tooltip title="Đăng nhập" color="cyan">
-            <Link href="login">
-              <span className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 ">
-                <FaUser />
-              </span>
-            </Link>
-          </Tooltip>
+          <Link href="/login">
+            <span className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 ">
+              <FaUser />
+            </span>
+          </Link>
         )}
-        <Link href="favorites">
+        <Link href="/favorites">
           <FaHeart className="text-slate-400 hover:text-slate-500 transition-colors text-xl" />
         </Link>
         <Badge count={0} showZero size="small">
-          <Link href="cart">
+          <Link href="/cart">
             <FaShoppingBag className="text-slate-400 hover:text-slate-500 transition-colors text-xl" />
           </Link>
         </Badge>

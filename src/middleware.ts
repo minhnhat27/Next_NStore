@@ -1,20 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '~/lib/auth-session'
+import { hasAuthSession } from './lib/auth-service'
+
+//export const runtime = 'edge'
+
+const authRoutes = ['/login', '/register', '/forget-password']
+const protectedRoutes = ['/profile', '/cart']
 
 export async function middleware(request: NextRequest) {
-  const session = await getSession()
-  const pathname = request.nextUrl.pathname
+  const { pathname } = request.nextUrl
+  let session = await hasAuthSession()
 
-  if (
-    session &&
-    (pathname.startsWith('/login') ||
-      pathname.startsWith('/register') ||
-      pathname.startsWith('/forget-password'))
-  ) {
-    return NextResponse.redirect(new URL('/', request.url))
+  const isProtectedRoute = protectedRoutes.includes(pathname)
+  const isAuthRoute = authRoutes.includes(pathname)
+
+  if (isProtectedRoute && !session) {
+    const loginUrl = new URL('/login', request.nextUrl)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
   }
+
+  if (isAuthRoute && session) {
+    return NextResponse.redirect(new URL('/', request.nextUrl))
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 }

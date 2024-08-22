@@ -2,7 +2,7 @@
 
 import { NextPage } from 'next'
 import React, { createContext, useContext, useReducer } from 'react'
-import { AuthActionEnums, AuthActionType, AuthStateType } from '~/utils/types'
+import { AuthActionEnums } from '~/utils/auth-actions'
 
 type AuthContextType = {
   state: AuthStateType
@@ -20,11 +20,13 @@ const reducer = (state: AuthStateType, action: AuthActionType): AuthStateType =>
       return {
         ...state,
         isAuthenticated: true,
+        userInfo: action.payload,
       }
     case AuthActionEnums.LOGOUT:
       return {
         ...state,
         isAuthenticated: false,
+        userInfo: action.payload,
       }
     default:
       return state

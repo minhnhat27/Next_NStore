@@ -1,6 +1,11 @@
 import { Card, Flex } from 'antd'
+import { Metadata } from 'next'
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  title: 'Login | VOA Store',
+}
+
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <Flex
       justify="center"

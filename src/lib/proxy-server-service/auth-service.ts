@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { LoginType, RegisterType, SendOTPType, VerifyOTPType } from '~/utils/types'
 
 const login = async (data: LoginType) => await axios.post('/api/login', data)
 

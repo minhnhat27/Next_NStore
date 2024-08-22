@@ -4,9 +4,8 @@ import { App, Button, Divider, Flex, Form, Image, Input, Typography } from 'antd
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { LockOutlined, UserOutlined, MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
-import { RegisterType, SendOTPType, VerifyOTPType } from '~/utils/types'
 import { useRouter } from 'next/navigation'
-import AuthService from '~/lib/service/auth-service'
+import AuthService from '~/lib/proxy-server-service/auth-service'
 import { showError } from '~/utils/common'
 
 const { Title } = Typography
@@ -49,7 +48,7 @@ const Register: React.FC = () => {
       await AuthService.sendOTP(data)
       setEmail(em)
       nextFormState()
-    } catch (error) {
+    } catch (error: any) {
       form.setFields([
         {
           name: 'email',
@@ -67,7 +66,7 @@ const Register: React.FC = () => {
       }
       await AuthService.verifyOTP(data)
       nextFormState()
-    } catch (error) {
+    } catch (error: any) {
       form.setFields([
         {
           name: 'token',
@@ -85,7 +84,7 @@ const Register: React.FC = () => {
         email: email,
       }
       await AuthService.register(data)
-    } catch (error) {
+    } catch (error: any) {
       form.setFields([
         {
           name: 'passwordConfirm',
@@ -267,8 +266,8 @@ const Register: React.FC = () => {
             Hoặc tiếp tục với
           </Divider>
           <Flex justify="center" align="center" className="space-x-3">
-            <Image src="/images/Facebook_Logo.png" width={35} preview={false} />
-            <Image src="/images/Google_Logo.png" width={35} preview={false} />
+            <Image alt="logo" src="/images/Facebook_Logo.png" width={35} preview={false} />
+            <Image alt="logo" src="/images/Google_Logo.png" width={35} preview={false} />
           </Flex>
           <Flex justify="space-between" align="center" className="mt-2 text-xs md:text-sm">
             <Link href="/forget-password">Quên mật khẩu</Link>
