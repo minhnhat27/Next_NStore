@@ -5,8 +5,10 @@ import {
   Badge,
   Button,
   ButtonProps,
+  Card,
   Checkbox,
   CheckboxOptionType,
+  Divider,
   Drawer,
   Flex,
   Pagination,
@@ -21,10 +23,13 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
 import { formatVND, toNextImageLink } from '~/utils/common'
+
+const { Meta } = Card
 
 const { Title } = Typography
 
@@ -57,9 +62,9 @@ enum FilterTypes {
 }
 
 interface IProps {
-  brands: BrandType[]
-  categories: CategoryType[]
-  material: MaterialType[]
+  brands: ProductAttrsType[]
+  categories: ProductAttrsType[]
+  material: ProductAttrsType[]
 }
 
 const countFilter = (filters: FilterType): number => {
@@ -134,7 +139,7 @@ export default function Products({ brands, categories, material }: IProps) {
     if (!filters.rating) {
       newParams.rating = undefined
     }
-    if (filters.priceRange && filters.priceRange[0] === filters.priceRange[0]) {
+    if (filters.priceRange && filters.priceRange[0] === filters.priceRange[1]) {
       newParams.minPrice = filters.priceRange[0]
     } else {
       if (filters.priceRange && filters.priceRange[0]) {
@@ -144,6 +149,7 @@ export default function Products({ brands, categories, material }: IProps) {
         newParams.maxPrice = filters.priceRange[1]
       }
     }
+    delete newParams.priceRange
 
     newParams.page = p ?? currentPage
     newParams.pageSize = pSize ?? pageSize
@@ -181,8 +187,8 @@ export default function Products({ brands, categories, material }: IProps) {
   if (isLoading)
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map(() => (
-          <Skeleton.Image className="h-[28rem] w-full" active />
+        {[...Array(5)].map((_, i) => (
+          <Skeleton.Image key={i} className="h-80 w-full" active />
         ))}
       </div>
     )
@@ -219,20 +225,75 @@ export default function Products({ brands, categories, material }: IProps) {
           }
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6">
           {data?.items.map((product, i) => {
             if (product.discountPercent) {
               const discountedPrice =
                 product.price - product.price * ((product.discountPercent ?? 0) / 100.0)
-
               return (
-                <Link key={i} href={`/fashions/details/${product.id}`}>
-                  <div className="border h-[28rem] hover:-translate-y-0.5 transition-transform">
-                    <Badge.Ribbon
-                      text={`-${product.discountPercent}%`}
-                      color="red"
-                      rootClassName="h-3/4"
+                <Link key={i} href={`/fashions/${product.id}?name=${product.name}`}>
+                  <Badge.Ribbon text={`-${product.discountPercent}%`} color="red">
+                    <Card
+                      hoverable
+                      className="h-[25rem]"
+                      styles={{
+                        cover: { height: '70%' },
+                        body: { height: '30%', padding: '1rem' },
+                      }}
+                      cover={
+                        <>
+                          <Image
+                            src={toNextImageLink(product.imageUrl)}
+                            alt="Product Image"
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            priority={i < 5}
+                            quality={100}
+                            className="w-full h-full object-cover"
+                          />
+                          <Divider className="m-0" />
+                        </>
+                      }
                     >
+                      <Meta
+                        title={product.name}
+                        description={
+                          <div className="space-y-1">
+                            <div className="text-red-500 font-semibold text-lg">
+                              {formatVND.format(discountedPrice)}
+                              <span className="ml-2 text-sm text-gray-500 line-through">
+                                {formatVND.format(product.price)}
+                              </span>
+                            </div>
+                            <Flex justify="space-between" align="center">
+                              <span>
+                                <Rate count={1} value={1} />{' '}
+                                <span className="text-gray-400">4.8</span>
+                              </span>
+                              <div className="text-xs 2xl:text-base text-slate-600">
+                                Đã bán {product.sold}
+                              </div>
+                            </Flex>
+                          </div>
+                        }
+                      />
+                    </Card>
+                  </Badge.Ribbon>
+                </Link>
+              )
+            }
+            return (
+              <Link key={i} href={`/fashions/${product.id}`}>
+                <Card
+                  hoverable
+                  className="h-[25rem]"
+                  styles={{
+                    cover: { height: '70%' },
+                    body: { height: '30%', padding: '1rem' },
+                  }}
+                  cover={
+                    <>
                       <Image
                         src={toNextImageLink(product.imageUrl)}
                         alt="Product Image"
@@ -243,19 +304,18 @@ export default function Products({ brands, categories, material }: IProps) {
                         quality={100}
                         className="w-full h-full object-cover"
                       />
-                    </Badge.Ribbon>
-                    <div className="relative space-y-2 h-1/4">
-                      <div className="text-black text-xs sm:text-sm line-clamp-2 px-2 pt-2">
-                        {product.name}
-                      </div>
-                      <div className="absolute bottom-0 w-full">
-                        <div className="text-red-500 font-semibold text-lg px-2">
-                          {formatVND.format(discountedPrice)}
-                          <span className="mx-2 text-sm text-gray-500 line-through">
-                            {formatVND.format(product.price)}
-                          </span>
+                      <Divider className="m-0" />
+                    </>
+                  }
+                >
+                  <Meta
+                    title={product.name}
+                    description={
+                      <div className="space-y-1">
+                        <div className="text-red-500 font-semibold text-lg">
+                          {formatVND.format(product.price)}
                         </div>
-                        <Flex justify="space-between" align="center" className="px-2 py-1">
+                        <Flex justify="space-between" align="center" className="">
                           <span>
                             <Rate count={1} value={1} /> <span className="text-gray-400">4.8</span>
                           </span>
@@ -264,43 +324,9 @@ export default function Products({ brands, categories, material }: IProps) {
                           </div>
                         </Flex>
                       </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            }
-            return (
-              <Link key={i} href={`/fashions/details/${product.id}`}>
-                <div className="border h-[28rem] hover:drop-shadow hover:-translate-y-0.5 transition-transform">
-                  <Image
-                    src={toNextImageLink(product.imageUrl)}
-                    alt="Product Image"
-                    width={0}
-                    height={0}
-                    sizes="100vw"
-                    priority={i < 5}
-                    quality={100}
-                    className="w-full h-3/4 object-cover"
+                    }
                   />
-                  <div className="relative space-y-2 h-1/4">
-                    <div className="text-black text-xs sm:text-sm line-clamp-2 px-2 pt-2">
-                      {product.name}
-                    </div>
-                    <div className="absolute bottom-0 w-full">
-                      <div className="text-red-500 font-semibold text-lg px-2">
-                        {formatVND.format(product.price)}
-                      </div>
-                      <Flex justify="space-between" align="center" className="px-2 py-1">
-                        <span>
-                          <Rate count={1} value={1} /> <span className="text-gray-400">4.8</span>
-                        </span>
-                        <div className="text-xs 2xl:text-base text-slate-600">
-                          Đã bán {product.sold}
-                        </div>
-                      </Flex>
-                    </div>
-                  </div>
-                </div>
+                </Card>
               </Link>
             )
           })}
@@ -308,7 +334,6 @@ export default function Products({ brands, categories, material }: IProps) {
       )}
       {(data?.items && data.items.length <= 0) || (
         <Pagination
-          //hideOnSinglePage
           align="center"
           className="py-4"
           current={currentPage}
@@ -323,7 +348,11 @@ export default function Products({ brands, categories, material }: IProps) {
         onClose={toggleFilterOpen}
         open={filterOpen}
         placement="right"
-        title="Bộ lọc"
+        title={
+          <div>
+            Bộ lọc <Badge showZero count={countFilter(filters)} color="orange" />
+          </div>
+        }
         footer={
           <div className="text-center space-x-2">
             <Button danger onClick={clearFilter}>

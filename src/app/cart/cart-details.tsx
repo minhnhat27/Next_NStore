@@ -23,7 +23,7 @@ import Image from 'next/image'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
 import { CART_API } from '~/utils/api-urls'
-import { useAuth } from '../auth-provider'
+import { useAuth } from '../../components/auth-provider'
 
 const { Title } = Typography
 

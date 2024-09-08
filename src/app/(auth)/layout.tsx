@@ -2,7 +2,7 @@ import { Card, Flex } from 'antd'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Login | VOA Store',
+  title: 'Đăng nhập | Đăng ký',
 }
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {

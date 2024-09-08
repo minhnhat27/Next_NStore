@@ -7,29 +7,18 @@
 @tailwind components;
 @tailwind utilities;
 
-body::-webkit-scrollbar {
+::-webkit-scrollbar {
   width: 5px;
-  height: 5px;
+  height: 7px;
 }
-body::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: white;
 }
-body::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: #cccccc;
   border-radius: 10px;
 }
 
-div::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-div::-webkit-scrollbar-track {
-  background: white;
-}
-div::-webkit-scrollbar-thumb {
-  background: #cccccc;
-  border-radius: 10px;
-}
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -37,4 +26,9 @@ div::-webkit-scrollbar-thumb {
 table thead {
   user-select: none;
   white-space: nowrap;
+}
+
+pre {
+  font-family: inherit;
+  font-size: inherit;
 }

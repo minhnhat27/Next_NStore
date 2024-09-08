@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const res = await axios.get(API_URL + '/filters', { params: searchParams })
 
-    return NextSuccess({ ...res.data, time: Date.now() }, res.status)
+    return NextSuccess({ ...res.data }, res.status)
   } catch (error: any) {
     return NextError(error)
   }

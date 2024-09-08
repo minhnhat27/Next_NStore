@@ -57,7 +57,6 @@ interface FilterType extends Filters {
   priceRange?: number[]
   sales?: string[]
 }
-
 interface ReceiverFieldType {
   name: string
   phoneNumber: number
@@ -105,9 +104,10 @@ interface PagedType<T> {
 interface ProductType {
   id: number
   name: string
+  description: string
   enable: boolean
+  gender: number
   sold: number
-  gender: string
   discountPercent: number
   price: number
   categoryName: string
@@ -115,17 +115,42 @@ interface ProductType {
   imageUrl: string
 }
 
-interface BrandType {
+interface ProductAttrsType {
   id: number
   name: string
 }
 
-interface CategoryType {
-  id: number
-  name: string
+interface ColorSizes {}
+
+enum Gender {
+  'Nam',
+  'Nữ',
+  'Unisex',
 }
 
-interface MaterialType {
+interface ColorSizes {
+  id: number
+  colorName: string
+  imageUrl: string
+  sizeInStocks: {
+    sizeId: int
+    sizeName: string
+    inStock: int
+  }[]
+}
+
+interface ProductDetailsType {
   id: number
   name: string
+  description?: string
+  enable: boolean
+  gender: Gender
+  sold: number
+  discountPercent: number
+  price: number
+  categoryId: number
+  brandId: number
+  materialIds: number[]
+  colorSizes: ColorSizes[]
+  imageUrls: string[]
 }

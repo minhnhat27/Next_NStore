@@ -1,7 +1,7 @@
 import { HomeOutlined, ProductOutlined } from '@ant-design/icons'
 import axios from 'axios'
 import { Metadata } from 'next'
-import Products from '~/components/fashion-page/products'
+import Products from './products'
 import BreadcrumbLink from '~/components/ui/breadcrumb'
 
 export const revalidate = 7200
@@ -30,7 +30,7 @@ const breadcrumbItems = [
 async function getBrands() {
   try {
     const res = await axios.get(process.env.API_URL + '/api/brands')
-    const data: BrandType[] = res.data
+    const data: ProductAttrsType[] = res.data
     return data
   } catch (error: any) {
     return []
@@ -40,7 +40,7 @@ async function getBrands() {
 async function getCategories() {
   try {
     const res = await axios.get(process.env.API_URL + '/api/categories')
-    const data: CategoryType[] = res.data
+    const data: ProductAttrsType[] = res.data
     return data
   } catch (error: any) {
     return []
@@ -50,7 +50,7 @@ async function getCategories() {
 async function getMaterialss() {
   try {
     const res = await axios.get(process.env.API_URL + '/api/materials')
-    const data: MaterialType[] = res.data
+    const data: ProductAttrsType[] = res.data
     return data
   } catch (error: any) {
     return []
@@ -58,9 +58,9 @@ async function getMaterialss() {
 }
 
 export default async function Fashions() {
-  const brandsData: Promise<CategoryType[]> = getBrands()
-  const categoriesData: Promise<CategoryType[]> = getCategories()
-  const materialsData: Promise<MaterialType[]> = getMaterialss()
+  const brandsData: Promise<ProductAttrsType[]> = getBrands()
+  const categoriesData: Promise<ProductAttrsType[]> = getCategories()
+  const materialsData: Promise<ProductAttrsType[]> = getMaterialss()
 
   const [brands, categories, materials] = await Promise.all([
     brandsData,
