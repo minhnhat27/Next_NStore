@@ -1,0 +1,22 @@
+import { Card, Flex } from 'antd'
+import { Metadata } from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
+import Header from '~/components/common/header'
+import WapperLayout from '~/components/layout/wapper'
+
+export const metadata: Metadata = {
+  title: 'Đăng nhập | Đăng ký',
+}
+
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Flex
+      justify="center"
+      align="center"
+      className="min-h-screen--header py-8 transition-all duration-300 bg-gradient-to-br from-slate-950 to-teal-400"
+    >
+      <Card className="transition-all w-11/12 md:w-3/5 lg:w-2/5">{children}</Card>
+    </Flex>
+  )
+}

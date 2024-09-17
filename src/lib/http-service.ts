@@ -3,13 +3,7 @@ import axios from 'axios'
 const get = (url: string) => axios.get(url).then((res) => res.data)
 
 const getWithSession = (url: string, session: any) =>
-  axios
-    .get(url, {
-      headers: {
-        Authorization: session,
-      },
-    })
-    .then((res) => res.data)
+  axios.get(`${url}?session=${session}`).then((res) => res.data)
 
 const getWithParams = (url: string, params: any) =>
   axios.get(url, { params: params, paramsSerializer: { indexes: true } }).then((res) => res.data)

@@ -1,4 +1,5 @@
 'use client'
+
 import { Button, Result } from 'antd'
 
 export default function Error({
@@ -9,20 +10,15 @@ export default function Error({
   reset: () => void
 }) {
   return (
-    // global-error must include html and body tags
-    <html>
-      <body>
-        <Result
-          status="500"
-          title="500"
-          subTitle="Có lỗi xảy ra."
-          extra={
-            <Button type="primary" onClick={() => reset()}>
-              Thử lại
-            </Button>
-          }
-        />
-      </body>
-    </html>
+    <Result
+      status="500"
+      title="Có lỗi xảy ra."
+      subTitle={error.message}
+      extra={
+        <Button type="primary" onClick={() => reset()}>
+          Thử lại
+        </Button>
+      }
+    />
   )
 }

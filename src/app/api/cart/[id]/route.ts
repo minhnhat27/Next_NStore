@@ -5,21 +5,24 @@ import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/cart'
 
-export async function GET() {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const id = params.id
+    const data = await req.json()
+    
     const auth: AuthHeaderType = await authHeader()
-    const res = await axios.get(API_URL, { headers: auth })
+    const res = await axios.put(API_URL + `/${id}`, data, { headers: auth })
     return NextSuccess(res.data, res.status)
   } catch (error: any) {
     return NextError(error)
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const data: CartItemType = await req.json()
+    const id = params.id
     const auth: AuthHeaderType = await authHeader()
-    const res = await axios.post(API_URL + '/create', data, { headers: auth })
+    const res = await axios.delete(API_URL + `/${id}`, { headers: auth })
     return NextSuccess(res.data, res.status)
   } catch (error: any) {
     return NextError(error)

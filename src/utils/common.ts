@@ -1,21 +1,13 @@
-export const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
-  let timeout: NodeJS.Timeout | null = null
-  return function (...args: Parameters<T>): void {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-
-    timeout = setTimeout(() => {
-      func(...args)
-      timeout = null
-    }, delay)
-  }
-}
-
 export const formatVND = new Intl.NumberFormat('vi', {
   style: 'currency',
   currency: 'VND',
 })
+
+// export const formatVND = (value: number) =>
+//   new Intl.NumberFormat('vi', {
+//     style: 'currency',
+//     currency: 'VND',
+//   }).format(value)
 
 export const formatUSD = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -64,5 +56,42 @@ export const convertToVietnamPhoneNumber = (phoneNumber: string): string => {
   return phoneNumber
 }
 
+export function removeVietnameseTones(str: string) {
+  return str
+    .normalize('NFD') // Chuẩn hóa chuỗi sang dạng Normalization Form D
+    .replace(/[\u0300-\u036f]/g, '') // Xóa các dấu (tổ hợp ký tự Unicode)
+    .replace(/đ/g, 'd') // Thay thế chữ đ thường
+    .replace(/Đ/g, 'D') // Thay thế chữ Đ hoa
+}
+
+export const searchAddress = (input: string, option?: ValueLabelType) => {
+  const inputWords = input.split(' ').map((word) => word.toLowerCase())
+
+  const data = inputWords.every((word) => (option?.label ?? '').toLowerCase().includes(word))
+
+  const vn = inputWords.every((word) =>
+    removeVietnameseTones(option?.label ?? '')
+      .toLowerCase()
+      .includes(removeVietnameseTones(word)),
+  )
+
+  return data || vn
+}
+
 export const toNextImageLink = (url: string | undefined): string =>
   url ? '/api/images?imageUrl=' + encodeURIComponent(url) : ''
+
+export const shippingPrice = (price: number): number =>
+  price >= 400000 || price === 0 ? 0 : price >= 200000 ? 10000 : 30000
+
+export const formatDate = (value: string | Date) => {
+  const date = new Date(value)
+
+  return date
+    .toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    .replaceAll('/', '-')
+}
