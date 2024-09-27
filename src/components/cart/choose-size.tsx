@@ -52,7 +52,7 @@ export default function ChooseSize({ item, cartItems, onChangeSize }: IProps) {
         placement="bottom"
         icon={null}
         overlayInnerStyle={{ padding: '1rem' }}
-        okButtonProps={{ danger: true }}
+        okButtonProps={{ danger: true, disabled: sizeId === item.sizeId }}
         showCancel={false}
       >
         {item.sizeInStocks.find((e) => e.sizeId === item.sizeId)?.sizeName}{' '}

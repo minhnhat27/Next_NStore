@@ -20,7 +20,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
 
   const [selected, setSelected] = useState<VoucherType | undefined>(voucher)
 
-  const { data: vouchers, isLoading } = useSWRImmutable<VoucherType[]>(
+  const { data: vouchers, isLoading } = useSWR<VoucherType[]>(
     openModelVoucher && [VOUCHER_API, session],
     ([VOUCHER_API, session]) => httpService.getWithSession(VOUCHER_API, session),
   )

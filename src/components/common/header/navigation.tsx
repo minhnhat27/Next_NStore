@@ -1,10 +1,11 @@
 'use client'
 
-import { Button, ConfigProvider, Drawer, Flex, Image, Menu, MenuProps } from 'antd'
+import { Button, ConfigProvider, Drawer, Flex, Menu, MenuProps } from 'antd'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
+import Image from 'next/image'
 
 type MenuItem = Required<MenuProps>['items'][number]
 
@@ -49,7 +50,16 @@ export default function Navigation() {
           <MenuUnfoldOutlined className="text-white text-xl" />
         </Button>
         <Link href="/" className="flex items-center">
-          <Image alt="logo" src="/images/Logo-1x1.png" className="w-24" preview={false} />
+          <Image
+            priority
+            alt="logo"
+            src="/images/Logo-1x1.png"
+            width={0}
+            height={0}
+            sizes="100vw"
+            quality={100}
+            className="w-24 h-auto"
+          />
         </Link>
       </Flex>
       <ConfigProvider

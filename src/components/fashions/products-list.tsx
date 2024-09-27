@@ -8,7 +8,6 @@ import {
   Card,
   Checkbox,
   CheckboxOptionType,
-  Divider,
   Drawer,
   Flex,
   Pagination,
@@ -22,8 +21,8 @@ import {
 } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
-import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
@@ -34,10 +33,10 @@ const { Meta } = Card
 const { Title } = Typography
 
 const sortOpts = [
-  { value: 0, label: 'Bán chạy' },
-  { value: 1, label: 'Giá từ thấp đến cao' },
-  { value: 2, label: 'Giá từ cao đến thấp' },
-  { value: 3, label: 'Mới nhất' },
+  { value: '0', label: 'Bán chạy' },
+  { value: '1', label: 'Giá từ thấp đến cao' },
+  { value: '2', label: 'Giá từ cao đến thấp' },
+  { value: '3', label: 'Mới nhất' },
 ]
 
 const saleOptions = [
@@ -46,7 +45,7 @@ const saleOptions = [
 ]
 
 const initFilters: FilterType = {
-  sorter: 0,
+  sorter: '0',
   page: 1,
   pageSize: 10,
 }
@@ -85,9 +84,24 @@ const countFilter = (filters: FilterType): number => {
 }
 
 export default function Products({ brands, categories, material }: IProps) {
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+
   const [filterOpen, setFilterOpen] = useState<boolean>(false)
 
-  const [filters, setFilters] = useState<FilterType>(initFilters)
+  const [filters, setFilters] = useState<FilterType>(() => {
+    var p = { ...initFilters }
+
+    const urlParams = new URLSearchParams(searchParams)
+    urlParams.forEach((value, key) => {
+      if (key === 'materialIds' || key === 'categoryIds' || key === 'brandIds')
+        p[key] = value.split(',').map((v) => v)
+      else p[key] = value
+    })
+
+    return p
+  })
 
   const [brandOptions, setBrandOptions] = useState<CheckboxOptionType[]>([])
   const [categoryOptions, setCategoryOptions] = useState<CheckboxOptionType[]>([])
@@ -131,14 +145,14 @@ export default function Products({ brands, categories, material }: IProps) {
 
   const getFilters = (filters: FilterType, p?: number, pSize?: number) => {
     let newParams: Filters = { ...filters }
+
     if (filters.sales && filters.sales.length > 0) {
       filters.sales.forEach((item) => {
         newParams[item] = true
       })
     }
-    if (!filters.rating) {
-      newParams.rating = undefined
-    }
+    if (!filters.rating) delete newParams.rating
+
     if (filters.priceRange && filters.priceRange[0] === filters.priceRange[1]) {
       newParams.minPrice = filters.priceRange[0]
     } else {
@@ -154,19 +168,24 @@ export default function Products({ brands, categories, material }: IProps) {
     newParams.page = p ?? currentPage
     newParams.pageSize = pSize ?? pageSize
 
+    const url = new URLSearchParams()
+    Object.entries(newParams).forEach(([key, value]) => url.set(key, value))
+    router.replace(`${pathname}?${url.toString()}`)
+
     setParams(newParams)
   }
 
-  const onChangeFilters = (type: FilterTypes, values: string[] | number | number[]) => {
+  const onChangeFilters = (type: FilterTypes, values: string | string[] | number | number[]) => {
     const newFilters = {
       ...filters,
       [type]: values,
     }
-    setFilters(newFilters)
 
-    if (type === FilterTypes.SORTER) {
-      getFilters(newFilters)
+    if (Array.isArray(values) && values.length <= 0) {
+      delete newFilters[type]
     }
+    setFilters(newFilters)
+    if (type === FilterTypes.SORTER) getFilters(newFilters)
   }
 
   const clearFilter: ButtonProps['onClick'] = () => setFilters(initFilters)
@@ -174,6 +193,7 @@ export default function Products({ brands, categories, material }: IProps) {
   const handleFilters: ButtonProps['onClick'] = () => {
     setCurrentPage(1)
     setPageSize(10)
+
     getFilters(filters, 1, 10)
     setFilterOpen(false)
   }
@@ -256,9 +276,9 @@ export default function Products({ brands, categories, material }: IProps) {
                             sizes="100vw"
                             priority={i < 5}
                             quality={100}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover border"
                           />
-                          <Divider className="m-0" />
+                          {/* <Divider className="m-0" /> */}
                         </>
                       }
                     >
@@ -311,9 +331,8 @@ export default function Products({ brands, categories, material }: IProps) {
                         sizes="100vw"
                         priority={i < 5}
                         quality={100}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover border"
                       />
-                      <Divider className="m-0" />
                     </>
                   }
                 >

@@ -5,6 +5,9 @@ import AuthProvider from '~/components/common/auth-provider'
 import { getUserInfo, hasAuthSession } from '~/lib/auth-service'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 
+import dynamic from 'next/dynamic'
+import { App } from 'antd'
+
 const inter = Inter({ subsets: ['vietnamese'] })
 
 export const metadata: Metadata = {
@@ -12,21 +15,31 @@ export const metadata: Metadata = {
   description: 'Fashions Store',
 }
 
+const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-provider'))
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const auth = hasAuthSession()
+  const info = getUserInfo()
+  const [isAuthenticated, userInfo] = await Promise.all([auth, info])
+
   const initialState: AuthStateType = {
-    isAuthenticated: await hasAuthSession(),
-    userInfo: await getUserInfo(),
+    isAuthenticated: isAuthenticated,
+    userInfo: userInfo,
   }
 
   return (
     <html lang="vi">
       <body className={inter.className}>
         <AuthProvider initialState={initialState}>
-          <AntdRegistry>{children}</AntdRegistry>
+          <AntdRegistry>
+            <AntdStyleProvider>
+              <App>{children}</App>
+            </AntdStyleProvider>
+          </AntdRegistry>
         </AuthProvider>
       </body>
     </html>

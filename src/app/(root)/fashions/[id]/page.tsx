@@ -5,9 +5,9 @@ import Details from '../../../../components/fashions/product-details'
 import axios from 'axios'
 import { notFound } from 'next/navigation'
 
-export const revalidate = 7200
+// export const revalidate = 7200
 
-export const dynamicParams = true
+// export const dynamicParams = true
 
 const breadcrumbItems = (name: string) => [
   {
@@ -30,17 +30,7 @@ const breadcrumbItems = (name: string) => [
 
 interface IProps {
   params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-async function getDetails(id: string) {
-  try {
-    const res = await axios.get(process.env.API_URL + `/api/products/${id}`)
-    const data: ProductDetailsType = res.data
-    return data
-  } catch (error: any) {
-    return null
-  }
+  searchParams: { name: string | string[] | undefined }
 }
 
 export async function generateMetadata({ searchParams }: IProps): Promise<Metadata> {
@@ -53,19 +43,13 @@ export async function generateMetadata({ searchParams }: IProps): Promise<Metada
   }
 }
 
-export default async function ProductDetails({ params: { id } }: IProps) {
-  // console.log(id)
-
-  if (!id) return <div>Product ID not found</div>
-
-  const data = await getDetails(id)
-
-  if (data) {
-    return (
-      <div className="p-4 space-y-4">
-        <BreadcrumbLink items={breadcrumbItems(data.name)} />
-        <Details product={data} />
-      </div>
-    )
-  } else notFound()
+export default async function ProductDetails({ searchParams }: IProps) {
+  return (
+    <div className="p-4 space-y-4">
+      <BreadcrumbLink
+        items={breadcrumbItems(searchParams.name?.toString() ?? 'Chi tiết sản phẩm')}
+      />
+      <Details />
+    </div>
+  )
 }

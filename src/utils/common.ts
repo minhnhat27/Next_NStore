@@ -95,3 +95,32 @@ export const formatDate = (value: string | Date) => {
     })
     .replaceAll('/', '-')
 }
+
+export const formatDateTime = (value: string | Date) => {
+  const date = new Date(value)
+
+  return date
+    .toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    .replaceAll('/', '-')
+}
+
+enum OrderStatus {
+  'Đang xử lý',
+  'Đã xác nhận',
+  'Chờ lấy hàng',
+  'Đang vận chuyển',
+  'Đang giao hàng',
+  'Đã nhận hàng',
+  'Đã hủy',
+}
+
+export const getOrderStatus = (index: number) => OrderStatus[index] ?? OrderStatus[0]
+export const Cancel_Status: number = 6
+export const Received_Status: number = 5

@@ -84,6 +84,13 @@ const Register: React.FC = () => {
         email: email,
       }
       await AuthService.register(data)
+
+      notification.success({
+        className: 'text-green-500',
+        message: 'Đăng ký thành công',
+        description: 'Vui lòng đăng nhập.',
+      })
+      router.replace('/login')
     } catch (error: any) {
       form.setFields([
         {
@@ -108,12 +115,6 @@ const Register: React.FC = () => {
       }
       case State.REGISTER: {
         await handleRegister()
-        notification.success({
-          className: 'text-green-500',
-          message: 'Đăng ký thành công',
-          description: 'Vui lòng đăng nhập.',
-        })
-        router.replace('/login')
         break
       }
     }

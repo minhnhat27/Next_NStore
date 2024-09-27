@@ -14,7 +14,7 @@ const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['ite
   {
     key: '/profile',
     label: (
-      <Link href="/profile">
+      <Link href="/account/profile">
         <span>
           <UserOutlined /> {name}
         </span>

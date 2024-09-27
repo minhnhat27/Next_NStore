@@ -24,53 +24,20 @@ import { formatVND, shippingPrice, showError, toNextImageLink } from '~/utils/co
 import Link from 'next/link'
 import Image from 'next/image'
 import httpService from '~/lib/http-service'
-import { CART_API } from '~/utils/api-urls'
+import { ACCOUNT_API, CART_API, ORDER_API, PAYMENT_API } from '~/utils/api-urls'
 import useAuth from '~/hooks/useAuth'
 import ChooseSize from './choose-size'
 import ChangeAddress from './change-address'
 import ChooseVoucher from './choose-voucher'
-import useSWR from 'swr'
 import debounce from 'debounce'
 import useSWRImmutable from 'swr/immutable'
+import { useRouter } from 'next/navigation'
+import useSWRMutation from 'swr/mutation'
+import useSWR from 'swr'
 
-const paymentMethods = [
-  { label: 'Thanh toán khi nhận hàng', value: 'cod' },
-  {
-    label: (
-      <Flex align="center" gap={10}>
-        <div>Cổng thanh toán VNPay</div>
-        <Image
-          alt="vnpay logo"
-          src="images/VNPay_Logo.png"
-          width={0}
-          height={0}
-          sizes="100vw"
-          unoptimized
-          className="w-8"
-        />
-      </Flex>
-    ),
-    value: 'vnpay',
-  },
-  {
-    label: (
-      <Flex align="center" gap={10}>
-        <div>Cổng thanh toán PayOS (Quét mã QR)</div>
-        <Image
-          alt="payos logo"
-          src="images/PayOS_Logo.png"
-          width={0}
-          height={0}
-          sizes="100vw"
-          unoptimized
-          className="w-8"
-        />
-      </Flex>
-    ),
-    value: 'payos',
-  },
-  { label: 'Momo', value: 'momo', disabled: true },
-]
+interface IProps {
+  paymentMethods: PaymentMethod[]
+}
 
 const columns = (
   checkedItems: CartItemsType[],
@@ -199,6 +166,7 @@ interface TotalType {
   discount: number
   voucher: number
   shipping: number
+  price: () => number
   total: () => number
 }
 
@@ -207,14 +175,19 @@ const initTotal: TotalType = {
   discount: 0,
   voucher: 0,
   shipping: 0,
+  price: function () {
+    return this.originTotal - this.discount
+  },
   total: function () {
     return this.originTotal - this.discount - this.voucher + this.shipping
   },
 }
 
-export default function CartDetails() {
+export default function CartDetails({ paymentMethods }: IProps) {
   const { state } = useAuth()
   const session = state.userInfo?.session
+
+  const router = useRouter()
 
   const { notification } = App.useApp()
 
@@ -222,24 +195,57 @@ export default function CartDetails() {
   const [checkedItems, setCheckedItems] = useState<CartItemsType[]>([])
 
   const [voucher, setVoucher] = useState<VoucherType>()
-
   const [total, setTotal] = useState<TotalType>(initTotal)
 
-  const [paymentMethod, setPaymentMethod] = useState<string>('cod')
+  const [paymentMethod, setPaymentMethod] = useState<string>(paymentMethods.at(0)?.name ?? 'COD')
 
   const onChangePaymentMethod = (e: RadioChangeEvent) => setPaymentMethod(e.target.value)
 
-  const { data, isLoading } = useSWRImmutable<CartItemsType[]>(
-    [CART_API, session],
-    ([url, session]) => httpService.getWithSession(url, session),
+  const { data, isLoading } = useSWR<CartItemsType[]>([CART_API, session], ([url, session]) =>
+    httpService.getWithSession(url, session),
   )
+
+  const {
+    data: address,
+    isLoading: address_loading,
+    mutate: address_mutate,
+  } = useSWRImmutable<AddressType>([ACCOUNT_API + '/address', session], ([url, session]) =>
+    httpService.getWithSession(url, session),
+  )
+
+  console.log(address)
+
+  const [addressError, setAddressError] = useState<boolean>(false)
+
+  useEffect(() => setAddressError(false), [address])
+
+  const sendCreateOrder = async (url: string, { arg }: { arg: any }) => httpService.post(url, arg)
+
+  const {
+    // data: createOrderResponse,
+    isMutating: isMutatingCreateOrder,
+    trigger: createOrderTrigger,
+  } = useSWRMutation(ORDER_API, sendCreateOrder)
 
   useEffect(() => {
     if (data) setCartItems(data)
   }, [data])
 
+  useEffect(() => {
+    if (checkedItems.length > 0) {
+      const updatedCheckedItems = cartItems.filter((checkedItem) =>
+        checkedItems.some((cartItem) => cartItem.id === checkedItem.id),
+      )
+      setCheckedItems(updatedCheckedItems)
+    }
+  }, [cartItems])
+
+  useEffect(() => {
+    calcPrice(checkedItems)
+  }, [checkedItems, voucher])
+
   const calcPrice = useCallback(
-    (newCheckedItems: CartItemsType[], voucherCalc?: VoucherType) => {
+    (newCheckedItems: CartItemsType[]) => {
       const { originPrice, discount } = newCheckedItems.reduce(
         (preValue, item) => {
           const quantity = item.quantity
@@ -257,14 +263,20 @@ export default function CartDetails() {
 
       let voucherDiscount = 0
 
-      if (voucherCalc && voucherCalc.minOrder <= price) {
-        if (voucherCalc.discountPercent)
-          voucherDiscount = price * (voucherCalc.discountPercent / 100)
-        else if (voucherCalc.discountAmount) voucherDiscount = voucherCalc.discountAmount
+      if (voucher && voucher.minOrder <= price) {
+        if (voucher.discountPercent) voucherDiscount = price * (voucher.discountPercent / 100)
+        else if (voucher.discountAmount) voucherDiscount = voucher.discountAmount
 
-        if (voucherDiscount > voucherCalc.maxDiscount) {
-          voucherDiscount = voucherCalc.maxDiscount
+        if (voucherDiscount > voucher.maxDiscount) {
+          voucherDiscount = voucher.maxDiscount
         }
+      }
+      if (voucher && price < voucher.minOrder) {
+        notification.warning({
+          message: 'Đã hủy voucher không thể áp dụng',
+          className: 'text-yellow-500',
+        })
+        setVoucher(undefined)
       }
 
       setTotal((prevTotal) => ({
@@ -288,11 +300,11 @@ export default function CartDetails() {
 
   const onChangeSize = async (item: CartItemsType, newSizeId: number): Promise<void> => {
     const inStock = item.sizeInStocks.find((x) => x.sizeId === newSizeId)?.inStock
-
     let newQuantity = item.quantity
     if (inStock && newQuantity > inStock) {
       newQuantity = inStock
     }
+
     const dataUpdate: UpdateCartItem = {
       sizeId: newSizeId,
       quantity: newQuantity,
@@ -302,7 +314,6 @@ export default function CartDetails() {
     const updatedCart = cartItems.map((e) =>
       e.id === item.id ? { ...e, sizeId: newSizeId, quantity: newQuantity } : e,
     )
-
     setCartItems(updatedCart)
   }
 
@@ -328,25 +339,13 @@ export default function CartDetails() {
         }
         return e
       })
-
-      if (checkedItems.length > 0) {
-        const updatedChecked = updatedCart.filter((e) =>
-          checkedItems.some((checkedItem) => checkedItem.id === e.id),
-        )
-        calcPrice(updatedChecked, voucher)
-      }
       setCartItems(updatedCart)
     }
   }
 
   const onCheckAllChange: CheckboxProps['onChange'] = (e) => {
-    if (cartItems && e.target.checked) {
-      calcPrice(cartItems, voucher)
-      setCheckedItems(cartItems)
-    } else {
-      setTotal(initTotal)
-      setCheckedItems([])
-    }
+    if (cartItems && e.target.checked) setCheckedItems(cartItems)
+    else setCheckedItems([])
   }
 
   const onCheckCartItems = (item: CartItemsType) => {
@@ -355,7 +354,6 @@ export default function CartDetails() {
       ? checkedItems.filter((e) => !(e.id === item.id))
       : [...checkedItems, item]
 
-    calcPrice(newList, voucher)
     setCheckedItems(newList)
   }
 
@@ -363,10 +361,6 @@ export default function CartDetails() {
     try {
       await httpService.del(`${CART_API}/${id}`)
       setCartItems(cartItems.filter((e) => e.id !== id))
-
-      const checkedCartItems = checkedItems.filter((e) => e.id !== id)
-      setCheckedItems(checkedCartItems)
-      calcPrice(checkedCartItems, voucher)
     } catch (error: any) {
       notification.error({
         message: 'Xóa giỏ hàng thất bại',
@@ -377,17 +371,88 @@ export default function CartDetails() {
   }
 
   const onChooseVoucher = (selected?: VoucherType): boolean => {
-    if (!selected) {
-      setVoucher(undefined)
-    } else {
+    if (!selected) setVoucher(undefined)
+    else {
       const today = new Date()
       if (selected.endDate < today) return false
       if (total.originTotal - total.discount < selected.minOrder) return false
 
       setVoucher(selected)
     }
-    calcPrice(checkedItems, selected)
     return true
+  }
+
+  const handleConfirmAddress = async (values: ReceiverType): Promise<boolean> => {
+    try {
+      const userAddress: AddressType = {
+        ...address,
+        name: values.fullname,
+        detail: values.detail,
+        province_id: values.province.value,
+        province_name: values.province.label,
+        ward_id: values.ward.value,
+        ward_name: values.ward.label,
+        district_id: values.district.value,
+        district_name: values.district.label,
+        phoneNumber: values.phoneNumber.toString(),
+      }
+
+      const result = await httpService.put(ACCOUNT_API + '/address', userAddress)
+      address_mutate(result)
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  const handleCreateOrder = async () => {
+    try {
+      const hasEmptyField = !address || (address && Object.values(address).some((value) => !value))
+
+      if (hasEmptyField) {
+        setAddressError(true)
+        return
+      }
+
+      const delivery = [
+        address?.detail,
+        address?.ward_name,
+        address?.district_name,
+        address?.province_name,
+      ].join(', ')
+
+      const receiver = [address?.name, address?.phoneNumber].join(', ')
+
+      const order: CreateOrderType = {
+        total: total.total(),
+        shippingCost: total.shipping,
+        code: voucher?.code,
+        paymentMethod: paymentMethod,
+        receiver: receiver,
+        deliveryAddress: delivery,
+        cartIds: checkedItems.map((item) => item.id),
+      }
+
+      const url = await createOrderTrigger(order)
+      // const url = await httpService.post(ORDER_API, order)
+
+      if (paymentMethod !== 'COD') {
+        router.push(url)
+      } else {
+        notification.success({
+          message: 'Đặt hàng thành công',
+          description: 'Vui lòng kiểm tra lại đơn hàng của bạn',
+          className: 'text-green-500',
+        })
+        router.replace('/account/purchase')
+      }
+    } catch (error: any) {
+      notification.error({
+        message: 'Đặt hàng thất bại',
+        description: showError(error),
+        className: 'text-red-500',
+      })
+    }
   }
 
   if (isLoading) return <Skeleton active paragraph={{ rows: 8 }} />
@@ -444,7 +509,19 @@ export default function CartDetails() {
           </div>
           <div className="space-y-2">
             <div className="border py-4 px-6 space-y-2 drop-shadow-sm">
-              <ChangeAddress />
+              {address_loading ? (
+                <Skeleton />
+              ) : (
+                <>
+                  <ChangeAddress address={address} handleConfirmAddress={handleConfirmAddress} />
+                  {addressError && (
+                    <div className="text-red-500 text-sm bg-red-100 px-1">
+                      Vui lòng điền thông tin giao hàng
+                    </div>
+                  )}
+                </>
+              )}
+
               <div>
                 <Divider className="my-4" />
               </div>
@@ -453,10 +530,10 @@ export default function CartDetails() {
                   <span className="font-semibold">Tổng tiền </span>
                   <span className="text-gray-400 text-xs">({checkedItems.length} sản phẩm)</span>
                 </div>
-                <div className="text-end">{formatVND.format(total.originTotal)}</div>
+                <div className="text-end">{formatVND.format(total.price())}</div>
               </div>
               <div className="columns-2">
-                <div className="font-semibold">Giảm giá</div>
+                <div className="font-semibold">Đã giảm</div>
                 <div className="text-end">{formatVND.format(total.discount)}</div>
               </div>
               <div className="columns-2">
@@ -489,24 +566,47 @@ export default function CartDetails() {
             <div className="border py-4 px-6 drop-shadow-sm">
               <Radio.Group value={paymentMethod} onChange={onChangePaymentMethod} size="large">
                 <Space direction="vertical">
-                  {paymentMethods.map((item, i) => (
-                    <Radio key={i} value={item.value} disabled={item.disabled}>
-                      {item.label}
-                    </Radio>
-                  ))}
+                  {paymentMethods.map((item, i) => {
+                    let label = (
+                      <Flex align="center" gap={10}>
+                        <div>Cổng thanh toán {item.name.toUpperCase()}</div>
+                        <Image
+                          alt={item.name}
+                          src={`images/${item.name}_Logo.png`}
+                          width={0}
+                          height={0}
+                          sizes="100vw"
+                          unoptimized
+                          className={`w-6 h-auto ${!item.isActive && 'filter grayscale'}`}
+                        />
+                        {item.isActive || '(Không khả dụng)'}
+                      </Flex>
+                    )
+
+                    if (item.name === 'COD') label = <div>Thanh toán khi nhận hàng</div>
+
+                    return (
+                      <Radio key={i} value={item.name} disabled={!item.isActive}>
+                        {label}
+                      </Radio>
+                    )
+                  })}
                 </Space>
               </Radio.Group>
             </div>
 
             <Button
-              htmlType="submit"
               size="large"
               type="primary"
               danger
-              disabled={checkedItems.length <= 0}
+              onClick={handleCreateOrder}
+              loading={isMutatingCreateOrder}
+              disabled={
+                checkedItems.length <= 0 || addressError || paymentMethods.every((e) => !e.isActive)
+              }
               className="rounded-none w-full"
             >
-              {paymentMethod !== 'cod' ? 'Tiến hành thanh toán' : 'Đặt hàng'}
+              Đặt hàng
             </Button>
           </div>
         </div>

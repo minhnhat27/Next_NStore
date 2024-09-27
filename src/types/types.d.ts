@@ -1,24 +1,25 @@
-interface ReceiverFieldType {
+interface ReceiverType {
   fullname: string
   phoneNumber: number
-  province: string
-  district: string
-  ward: string
+  province: ValueLabelType
+  district: ValueLabelType
+  ward: ValueLabelType
   detail: string
 }
 
 interface ProvinceType {
-  province_id: number
-  province_name: string
+  province_id?: number | string
+  province_name?: string
 }
 interface DistrictType {
-  district_id: number
-  district_name: string
+  district_id?: number | string
+  district_name?: string
 }
 interface WardType {
-  ward_id: number
-  ward_name: string
+  ward_id?: number | string
+  ward_name?: string
 }
+
 type ValueLabelType = {
   value: number | string
   label: string

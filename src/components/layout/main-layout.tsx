@@ -1,9 +1,10 @@
 'use client'
 
-import { Layout } from 'antd'
-import { Suspense } from 'react'
+import { Suspense, useMemo } from 'react'
 import Loading from '~/app/loading'
-import WapperLayout from './wapper'
+
+import { App, ConfigProvider, Layout } from 'antd'
+import viVN from 'antd/locale/vi_VN'
 
 const { Content } = Layout
 
@@ -15,14 +16,16 @@ interface IProps {
 
 export default function MainLayout({ children, header, footer }: IProps) {
   return (
-    <WapperLayout>
-      {header}
-      <Suspense fallback={<Loading />}>
-        <Content className="min-h-screen--header lg:container lg:mx-auto transition-all">
-          {children}
-        </Content>
-      </Suspense>
-      {footer}
-    </WapperLayout>
+    <ConfigProvider locale={viVN}>
+      <Layout className="bg-white">
+        {header}
+        <Suspense fallback={<Loading />}>
+          <Content className="min-h-screen--header lg:container lg:mx-auto transition-all">
+            {children}
+          </Content>
+        </Suspense>
+        {footer}
+      </Layout>
+    </ConfigProvider>
   )
 }
