@@ -1,7 +1,7 @@
 import axios from 'axios'
 import dayjs from 'dayjs'
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/auth'

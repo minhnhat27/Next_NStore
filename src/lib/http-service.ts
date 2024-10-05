@@ -8,6 +8,11 @@ const getWithSession = (url: string, session: any) =>
 const getWithParams = (url: string, params: any) =>
   axios.get(url, { params: params, paramsSerializer: { indexes: true } }).then((res) => res.data)
 
+const getWithSessionParams = (url: string, session: any, params: any) =>
+  axios
+    .get(`${url}?session=${session}`, { params: params, paramsSerializer: { indexes: true } })
+    .then((res) => res.data)
+
 const post = (url: string, data: any) => axios.post(url, data).then((res) => res.data)
 
 const put = (url: string, data: any) => axios.put(url, data).then((res) => res.data)
@@ -18,6 +23,7 @@ const httpService = {
   get,
   getWithSession,
   getWithParams,
+  getWithSessionParams,
   post,
   put,
   del,

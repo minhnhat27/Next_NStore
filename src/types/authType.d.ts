@@ -29,6 +29,13 @@ type AuthContextType = {
   dispatch: React.Dispatch<AuthActionType>
 }
 
+type FavoritesContextType = {
+  favorites: number[]
+  setFavorite: (fav: number[]) => void
+  addFavorite: (id: number) => Promise<void>
+  removeFavorite: (id: number) => Promise<void>
+}
+
 type AuthActionType = {
   type: AuthActionEnums
   payload?: UserInfoType

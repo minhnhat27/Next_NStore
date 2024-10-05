@@ -21,7 +21,7 @@ import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { BsFire } from 'react-icons/bs'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
 import { CART_API, FASHION_API } from '~/utils/api-urls'
@@ -81,7 +81,7 @@ export default function Details() {
 
   const { notification } = App.useApp()
   const [images, setImages] = useState<string[]>()
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState<boolean>(false)
 
   const { data: product, isLoading } = useSWR<ProductDetailsType>(
     `${FASHION_API}/${params.id}`,
@@ -199,7 +199,8 @@ export default function Details() {
           className: 'text-green-500',
         })
 
-        // mutate([`${CART_API}?session=${state.userInfo?.session}`, state.userInfo?.session])
+        mutate([`${CART_API}`, state.userInfo?.session])
+        mutate([`${CART_API}/count`, state.userInfo?.session])
 
         setSelected(initCartItem)
         setDisabledColors(product?.colorSizes.map(() => true) ?? [])
@@ -417,7 +418,7 @@ export default function Details() {
         </div>
         {currentImage && (
           <AntdImage
-            width={200}
+            width={0}
             hidden
             preview={{
               visible,

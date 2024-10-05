@@ -34,3 +34,9 @@ interface PagedType<T> {
   pageSize: number
   totalPages: number
 }
+
+interface PaginationType {
+  page: number
+  pageSize: number
+  key?: string
+}

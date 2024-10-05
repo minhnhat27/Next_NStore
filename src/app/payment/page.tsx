@@ -2,7 +2,7 @@
 
 import { App, Spin } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import httpService from '~/lib/http-service'
 import { PAYMENT_API } from '~/utils/api-urls'
@@ -13,20 +13,35 @@ export default function Payment() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const urlParams = new URLSearchParams(searchParams.toString())
-  const params = Object.fromEntries(urlParams.entries()) as unknown as VNPayCallback
+  const urlParams = new URLSearchParams(searchParams)
+  const gateway = urlParams.get('gateway')
 
-  if (
-    !params.vnp_TmnCode ||
-    !params.vnp_Amount ||
-    !params.vnp_SecureHash ||
-    !params.vnp_ResponseCode ||
-    Object.entries(params).length === 0
-  ) {
-    return <NotFound />
-  }
+  let params = undefined
+  let callbackUrl = undefined
 
-  const { isLoading, error } = useSWR([PAYMENT_API + '/vnpay-callback', params], ([url, params]) =>
+  if (gateway === 'payos') {
+    params = Object.fromEntries(urlParams.entries()) as unknown as PayOSCallback
+    if (Object.values(params).some((value) => !value)) return <NotFound />
+
+    callbackUrl = '/payos-callback'
+  } else if (gateway === 'vnpay') {
+    params = Object.fromEntries(urlParams.entries()) as unknown as VNPayCallback
+    if (
+      !params.vnp_TmnCode ||
+      !params.vnp_Amount ||
+      !params.vnp_SecureHash ||
+      !params.vnp_ResponseCode ||
+      !params.vnp_TransactionStatus ||
+      !params.vnp_TransactionNo ||
+      Object.entries(params).length === 0
+    ) {
+      return <NotFound />
+    }
+
+    callbackUrl = '/vnpay-callback'
+  } else return <NotFound />
+
+  const { isLoading, error } = useSWR([PAYMENT_API + callbackUrl, params], ([url, params]) =>
     httpService.getWithParams(url, params),
   )
 

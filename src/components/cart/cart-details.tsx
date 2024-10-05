@@ -33,7 +33,7 @@ import debounce from 'debounce'
 import useSWRImmutable from 'swr/immutable'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 
 interface IProps {
   paymentMethods: PaymentMethod[]
@@ -197,11 +197,17 @@ export default function CartDetails({ paymentMethods }: IProps) {
   const [voucher, setVoucher] = useState<VoucherType>()
   const [total, setTotal] = useState<TotalType>(initTotal)
 
-  const [paymentMethod, setPaymentMethod] = useState<string>(paymentMethods.at(0)?.name ?? 'COD')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | undefined>(
+    paymentMethods.at(0),
+  )
 
   const onChangePaymentMethod = (e: RadioChangeEvent) => setPaymentMethod(e.target.value)
 
-  const { data, isLoading } = useSWR<CartItemsType[]>([CART_API, session], ([url, session]) =>
+  const {
+    data,
+    isLoading,
+    mutate: cart_mutate,
+  } = useSWR<CartItemsType[]>([CART_API, session], ([url, session]) =>
     httpService.getWithSession(url, session),
   )
 
@@ -212,8 +218,6 @@ export default function CartDetails({ paymentMethods }: IProps) {
   } = useSWRImmutable<AddressType>([ACCOUNT_API + '/address', session], ([url, session]) =>
     httpService.getWithSession(url, session),
   )
-
-  console.log(address)
 
   const [addressError, setAddressError] = useState<boolean>(false)
 
@@ -360,7 +364,11 @@ export default function CartDetails({ paymentMethods }: IProps) {
   const handleDeleteCartItem = async (id: string) => {
     try {
       await httpService.del(`${CART_API}/${id}`)
-      setCartItems(cartItems.filter((e) => e.id !== id))
+      const newCart = cartItems.filter((e) => e.id !== id)
+      setCartItems(newCart)
+
+      mutate([`${CART_API}/count`, state.userInfo?.session], newCart.length)
+      cart_mutate(newCart)
     } catch (error: any) {
       notification.error({
         message: 'Xóa giỏ hàng thất bại',
@@ -423,28 +431,36 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
       const receiver = [address?.name, address?.phoneNumber].join(', ')
 
-      const order: CreateOrderType = {
-        total: total.total(),
-        shippingCost: total.shipping,
-        code: voucher?.code,
-        paymentMethod: paymentMethod,
-        receiver: receiver,
-        deliveryAddress: delivery,
-        cartIds: checkedItems.map((item) => item.id),
-      }
+      if (paymentMethod) {
+        const order: CreateOrderType = {
+          total: total.total(),
+          shippingCost: total.shipping,
+          code: voucher?.code,
+          paymentMethodId: paymentMethod.id,
+          receiver: receiver,
+          deliveryAddress: delivery,
+          cartIds: checkedItems.map((item) => item.id),
+        }
 
-      const url = await createOrderTrigger(order)
-      // const url = await httpService.post(ORDER_API, order)
+        const url = await createOrderTrigger(order)
+        // const url = await httpService.post(ORDER_API, order)
 
-      if (paymentMethod !== 'COD') {
-        router.push(url)
+        if (paymentMethod.name.toUpperCase() != 'COD') {
+          router.push(url)
+        } else {
+          notification.success({
+            message: 'Đặt hàng thành công',
+            description: 'Vui lòng kiểm tra lại đơn hàng của bạn',
+            className: 'text-green-500',
+          })
+          router.replace('/account/purchase')
+        }
       } else {
-        notification.success({
-          message: 'Đặt hàng thành công',
-          description: 'Vui lòng kiểm tra lại đơn hàng của bạn',
-          className: 'text-green-500',
+        notification.error({
+          message: 'Đặt hàng thất bại',
+          description: 'Vui lòng chọn phương thức thanh toán',
+          className: 'text-red-500',
         })
-        router.replace('/account/purchase')
       }
     } catch (error: any) {
       notification.error({
@@ -510,7 +526,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
           <div className="space-y-2">
             <div className="border py-4 px-6 space-y-2 drop-shadow-sm">
               {address_loading ? (
-                <Skeleton />
+                <Skeleton active />
               ) : (
                 <>
                   <ChangeAddress address={address} handleConfirmAddress={handleConfirmAddress} />
@@ -521,7 +537,6 @@ export default function CartDetails({ paymentMethods }: IProps) {
                   )}
                 </>
               )}
-
               <div>
                 <Divider className="my-4" />
               </div>
@@ -564,7 +579,11 @@ export default function CartDetails({ paymentMethods }: IProps) {
               </div>
             </div>
             <div className="border py-4 px-6 drop-shadow-sm">
-              <Radio.Group value={paymentMethod} onChange={onChangePaymentMethod} size="large">
+              <Radio.Group
+                value={paymentMethod ?? paymentMethods.at(0)}
+                onChange={onChangePaymentMethod}
+                size="large"
+              >
                 <Space direction="vertical">
                   {paymentMethods.map((item, i) => {
                     let label = (
@@ -583,10 +602,11 @@ export default function CartDetails({ paymentMethods }: IProps) {
                       </Flex>
                     )
 
-                    if (item.name === 'COD') label = <div>Thanh toán khi nhận hàng</div>
+                    if (item.name.toUpperCase() === 'COD')
+                      label = <div>Thanh toán khi nhận hàng</div>
 
                     return (
-                      <Radio key={i} value={item.name} disabled={!item.isActive}>
+                      <Radio key={i} value={item} disabled={!item.isActive}>
                         {label}
                       </Radio>
                     )

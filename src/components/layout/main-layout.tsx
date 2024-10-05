@@ -1,10 +1,15 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Suspense, useEffect, useMemo } from 'react'
 import Loading from '~/app/loading'
 
 import { App, ConfigProvider, Layout } from 'antd'
 import viVN from 'antd/locale/vi_VN'
+import useFavorite from '~/hooks/useFavorites'
+import useSWRImmutable from 'swr/immutable'
+import { ACCOUNT_API } from '~/utils/api-urls'
+import httpService from '~/lib/http-service'
+import useAuth from '~/hooks/useAuth'
 
 const { Content } = Layout
 
@@ -15,6 +20,19 @@ interface IProps {
 }
 
 export default function MainLayout({ children, header, footer }: IProps) {
+  const { setFavorite } = useFavorite()
+  const { state } = useAuth()
+  const session = state.userInfo?.session
+
+  const { data } = useSWRImmutable<number[]>(
+    state.isAuthenticated && [ACCOUNT_API + '/favorite', session],
+    ([url, session]) => httpService.getWithSession(url, session),
+  )
+
+  useEffect(() => {
+    if (data) setFavorite(data)
+  }, [data])
+
   return (
     <ConfigProvider locale={viVN}>
       <Layout className="bg-white">

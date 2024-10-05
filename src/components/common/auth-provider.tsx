@@ -34,10 +34,10 @@ export default function AuthProvider({ children, initialState }: IProps) {
   return <AuthContext.Provider value={{ state, dispatch }}>{children}</AuthContext.Provider>
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+// export const useAuth = () => {
+//   const context = useContext(AuthContext)
+//   if (context === undefined) {
+//     throw new Error('useAuth must be used within an AuthProvider')
+//   }
+//   return context
+// }

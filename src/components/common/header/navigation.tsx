@@ -42,7 +42,7 @@ export default function Navigation() {
   const pathname = usePathname()
   const [showNavbar, setShowNavbar] = useState(false)
 
-  const regex = pathname.match(/^\/[^/]+/)?.at(0) ?? '/'
+  // const regex = pathname.match(/^\/[^/]+/)?.at(0) ?? '/'
   return (
     <>
       <Flex align="center" className="shrink-0">
@@ -72,20 +72,21 @@ export default function Navigation() {
         }}
       >
         <Menu
-          className="text-nowrap text-lg bg-black hidden md:inline-block text-center w-full"
+          className="text-nowrap text-lg bg-transparent hidden md:inline-block text-center w-full"
           items={navigateItems}
           mode="horizontal"
-          selectedKeys={[regex]}
+          selectedKeys={[pathname]}
           theme="dark"
         />
       </ConfigProvider>
+
       <Drawer title="Menu" placement="left" onClose={() => setShowNavbar(false)} open={showNavbar}>
         <Menu
           mode="inline"
           items={navigateItems}
-          selectedKeys={[regex]}
+          selectedKeys={[pathname]}
           onSelect={() => setShowNavbar(false)}
-          className="font-semibold"
+          className="font-semibold h-full"
         />
       </Drawer>
     </>

@@ -1,9 +1,7 @@
-import { Divider, Image, Card, Carousel } from 'antd'
+import { Divider, Image, Carousel } from 'antd'
 import React from 'react'
 
-const { Meta } = Card
-
-const FlashSale: React.FC = () => {
+export default function FlashSale() {
   return (
     <>
       <Divider>
@@ -28,4 +26,3 @@ const FlashSale: React.FC = () => {
     </>
   )
 }
-export default FlashSale

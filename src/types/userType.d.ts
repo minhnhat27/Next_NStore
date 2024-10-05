@@ -3,3 +3,15 @@ interface AddressType extends ProvinceType, DistrictType, WardType {
   phoneNumber?: string
   detail?: string
 }
+
+interface InfoType {
+  fullname?: string
+  phoneNumber?: string
+  email?: string
+}
+
+type ChangePasswordType = {
+  currentPassword?: string
+  newPassword?: string
+  confirm?: string
+}

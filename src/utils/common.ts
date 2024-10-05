@@ -124,3 +124,5 @@ enum OrderStatus {
 export const getOrderStatus = (index: number) => OrderStatus[index] ?? OrderStatus[0]
 export const Cancel_Status: number = 6
 export const Received_Status: number = 5
+
+export const getPaymentDeadline = (date: string) => new Date(date).getTime() + 1000 * 60 * 15

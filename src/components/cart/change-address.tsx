@@ -9,9 +9,16 @@ import { convertToVietnamPhoneNumber, removeVietnameseTones, searchAddress } fro
 interface IProps {
   address?: AddressType
   handleConfirmAddress: (values: ReceiverType) => Promise<boolean>
+  truncate?: boolean
+  className?: string
 }
 
-export default function ChangeAddress({ address, handleConfirmAddress }: IProps) {
+export default function ChangeAddress({
+  address,
+  handleConfirmAddress,
+  truncate = false,
+  className,
+}: IProps) {
   const [form] = Form.useForm()
 
   const [openModalAddress, setOpenModalAddress] = useState<boolean>(false)
@@ -203,40 +210,42 @@ export default function ChangeAddress({ address, handleConfirmAddress }: IProps)
           <Input showCount maxLength={30} size="large" placeholder="Địa chỉ" />
         </Form.Item>
       </Modal>
-      <div className="grid grid-cols-3 gap-1">
-        <div className="col-span-2 flex items-center gap-1">
-          <FaLocationDot className="text-xl text-red-600" />
-          <div className="font-bold inline-block truncate">
-            {address?.name || address?.phoneNumber ? (
-              <>
-                {address && address.name}
-                <Divider type="vertical" />
-                {address?.phoneNumber}
-              </>
-            ) : (
-              'Chưa có thông tin'
-            )}
+      <div className={className}>
+        <div className="grid grid-cols-3 gap-1">
+          <div className="col-span-2 flex items-center gap-1">
+            <FaLocationDot className="text-xl text-red-600" />
+            <div className="font-bold inline-block truncate">
+              {address?.name || address?.phoneNumber ? (
+                <>
+                  {address && address.name}
+                  <Divider type="vertical" />
+                  {address?.phoneNumber}
+                </>
+              ) : (
+                'Chưa có thông tin'
+              )}
+            </div>
           </div>
+          <Button
+            type="link"
+            onClick={() => setOpenModalAddress(true)}
+            className="px-0 w-fit justify-self-end"
+          >
+            Thay đổi
+          </Button>
         </div>
-        <Button
-          type="link"
-          onClick={() => setOpenModalAddress(true)}
-          className="px-0 w-fit justify-self-end"
-        >
-          Thay đổi
-        </Button>
+        {address &&
+        address.detail &&
+        address.ward_name &&
+        address.district_name &&
+        address.province_name ? (
+          <div className={truncate ? 'truncate' : ''}>
+            {address.detail}, {address.ward_name}, {address.district_name}, {address.province_name}
+          </div>
+        ) : (
+          'Chưa chọn địa chỉ'
+        )}
       </div>
-      {address &&
-      address.detail &&
-      address.ward_name &&
-      address.district_name &&
-      address.province_name ? (
-        <div className="truncate">
-          {address.detail}, {address.ward_name}, {address.district_name}, {address.province_name}
-        </div>
-      ) : (
-        'Chưa chọn địa chỉ'
-      )}
     </>
   )
 }

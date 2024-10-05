@@ -5,6 +5,7 @@ interface OrderType {
   amountPaid: number
   paymentMethod: string
   orderStatus: number
+  payBackUrl?: string
 }
 
 interface CreateOrderType {
@@ -14,10 +15,11 @@ interface CreateOrderType {
   receiver: string
   deliveryAddress: string
   cartIds: string[]
-  paymentMethod: string
+  paymentMethodId: number
 }
 
 interface PaymentMethod {
+  id: number
   name: string
   isActive: boolean
 }

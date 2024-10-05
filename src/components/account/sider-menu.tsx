@@ -1,6 +1,6 @@
 'use client'
 
-import { AppstoreOutlined, CalendarOutlined, MailOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, CalendarOutlined, HeartOutlined, MailOutlined } from '@ant-design/icons'
 import { GetProp, Layout, Menu, MenuProps } from 'antd'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -21,9 +21,14 @@ const items: MenuItem[] = [
     label: <Link href="/account/purchase">Đơn hàng</Link>,
   },
   {
-    key: '/account/address',
+    key: '/account/favorite',
+    icon: <HeartOutlined />,
+    label: <Link href="/account/favorite">Yêu thích</Link>,
+  },
+  {
+    key: '/account/change-password',
     icon: <AppstoreOutlined />,
-    label: <Link href="/account/address">Địa chỉ</Link>,
+    label: <Link href="/account/change-password">Đổi mật khẩu</Link>,
   },
 ]
 

@@ -1,30 +1,30 @@
-'use client'
-
 import { GiftOutlined, RollbackOutlined, TruckOutlined } from '@ant-design/icons'
-import { Carousel, Flex, Image, Typography } from 'antd'
+import axios from 'axios'
+import Banner from '~/components/home/banner'
 import BestSeller from '~/components/home/best-seller'
 import FlashSale from '~/components/home/flash-sale'
+import PopularBrands from '~/components/home/popuplar-brands'
 import ProductHighlight from '~/components/home/product-highlight'
+import { HOME_API } from '~/utils/api-urls'
 
-export default function Home() {
+export const revalidate = 7200
+
+const getBanner = async () => {
+  try {
+    const res = await axios.get(process.env.API_URL + HOME_API + '/banner')
+    const data: string[] = res.data
+    return data
+  } catch (error) {
+    return []
+  }
+}
+
+export default async function Home() {
+  const images = await getBanner()
+
   return (
-    <div className="pb-4">
-      <Carousel arrows autoplay className="md:h-screen--header">
-        <Image
-          rootClassName="w-full"
-          src="/images/Banner.png"
-          className="md:h-screen--header"
-          preview={false}
-          alt="banner"
-        />
-        <Image
-          rootClassName="w-full"
-          src="/images/Banner.png"
-          className="md:h-screen--header"
-          preview={false}
-          alt="banner"
-        />
-      </Carousel>
+    <>
+      <Banner images={images} />
       <div className="p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 p-4 md:py-10 text-sx sm:text-sm md:text-base">
           <div className="text-center py-4">
@@ -32,9 +32,7 @@ export default function Home() {
               <TruckOutlined className="text-4xl" />
               <div className="text-gray-600 text-lg font-semibold">Miễn phí vận chuyển</div>
             </div>
-            <div className="text-sm text-center p-1">
-              Miễn phí vận chuyển đơn hàng tối thiểu 150.000đ
-            </div>
+            <div className="text-sm text-center p-1">Miễn phí vận chuyển đơn hàng từ 200.000đ</div>
           </div>
           <div className="text-center py-4">
             <div className="h-2/3">
@@ -57,13 +55,16 @@ export default function Home() {
               <RollbackOutlined className="text-4xl" />
               <div className="text-gray-600 text-lg font-semibold">Hoàn tiền sản phẩm lỗi</div>
             </div>
-            <div className="text-sm text-center p-1">Liên hệ với chúng tôi nếu sản phẩm bị lỗi</div>
+            <div className="text-sm text-center p-1">
+              Liên hệ với chúng tôi nếu sản phẩm của bạn gặp lỗi
+            </div>
           </div>
         </div>
         <FlashSale />
         <BestSeller />
+        <PopularBrands />
         <ProductHighlight />
       </div>
-    </div>
+    </>
   )
 }

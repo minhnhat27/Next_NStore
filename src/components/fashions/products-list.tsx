@@ -1,6 +1,6 @@
 'use client'
 
-import { FunnelPlotOutlined } from '@ant-design/icons'
+import { FunnelPlotOutlined, HeartFilled, HeartOutlined } from '@ant-design/icons'
 import {
   Badge,
   Button,
@@ -19,16 +19,13 @@ import {
   Slider,
   Typography,
 } from 'antd'
-import Image from 'next/image'
-import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
+import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
-import { formatVND, toNextImageLink } from '~/utils/common'
-
-const { Meta } = Card
+import CardProduct from './card-product'
 
 const { Title } = Typography
 
@@ -38,10 +35,10 @@ const sortOpts = [
   { value: '2', label: 'Giá từ cao đến thấp' },
   { value: '3', label: 'Mới nhất' },
 ]
-
-const saleOptions = [
-  { label: 'Đang giảm giá', value: 'discount' },
-  { label: 'Flash sale', value: 'flashsale' },
+const genderOpts = [
+  { value: '0', label: 'Nam' },
+  { value: '1', label: 'Nữ' },
+  { value: '2', label: 'Unisex' },
 ]
 
 const initFilters: FilterType = {
@@ -51,13 +48,16 @@ const initFilters: FilterType = {
 }
 
 enum FilterTypes {
+  SORTER = 'sorter',
   CATEGORIES = 'categoryIds',
   BRANDS = 'brandIds',
   MATERIALS = 'materialIds',
+  GENDERS = 'genders',
   PRICERANGE = 'priceRange',
   RATING = 'rating',
   SALES = 'sales',
-  SORTER = 'sorter',
+  DISCOUNT = 'discount',
+  FLASHSALE = 'flashsale',
 }
 
 interface IProps {
@@ -66,27 +66,9 @@ interface IProps {
   material: ProductAttrsType[]
 }
 
-const countFilter = (filters: FilterType): number => {
-  let count = 0
-  Object.keys(filters).forEach((key) => {
-    const value = filters[key]
-
-    if (Array.isArray(value)) {
-      if (value.length > 0) {
-        count += value.length
-      }
-    } else if (value !== null && value !== undefined) {
-      count++
-    }
-  })
-  if (count >= 3) count -= 3
-  return count
-}
-
 export default function Products({ brands, categories, material }: IProps) {
   const searchParams = useSearchParams()
-  const pathname = usePathname()
-  const router = useRouter()
+  const { setRealTimeParams } = useRealTimeParams()
 
   const [filterOpen, setFilterOpen] = useState<boolean>(false)
 
@@ -94,11 +76,19 @@ export default function Products({ brands, categories, material }: IProps) {
     var p = { ...initFilters }
 
     const urlParams = new URLSearchParams(searchParams)
-    urlParams.forEach((value, key) => {
-      if (key === 'materialIds' || key === 'categoryIds' || key === 'brandIds')
-        p[key] = value.split(',').map((v) => v)
-      else p[key] = value
+    urlParams?.forEach((value, key) => {
+      if (key === 'materialIds' || key === 'categoryIds' || key === 'brandIds') {
+        p[key] = value.split(',').map((v) => v.trim())
+      } else if (key === 'maxPrice' || key === 'minPrice' || key === 'page' || key === 'pageSize') {
+        p[key] = parseInt(value)
+      } else p[key] = value
     })
+
+    p.priceRange = p.maxPrice
+      ? [p.minPrice ?? 0, p.maxPrice]
+      : p.minPrice
+      ? [p.minPrice]
+      : undefined
 
     return p
   })
@@ -110,7 +100,55 @@ export default function Products({ brands, categories, material }: IProps) {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageSize, setPageSize] = useState<number>(10)
 
-  const [params, setParams] = useState<FilterType>(filters)
+  const filtersToParams = (filters: FilterType) => {
+    let newParams: FilterType = { ...filters }
+    if (!filters.rating) delete newParams.rating
+
+    if (filters.priceRange && filters.priceRange[0] === filters.priceRange[1]) {
+      newParams.minPrice = filters.priceRange[0]
+    } else {
+      if (filters.priceRange && filters.priceRange[0]) {
+        newParams.minPrice = filters.priceRange[0]
+      }
+      if (filters.priceRange && filters.priceRange[1]) {
+        newParams.maxPrice = filters.priceRange[1]
+      }
+    }
+    delete newParams.priceRange
+
+    return newParams
+  }
+
+  const paramsToFilters = (params: FilterType) => {
+    let newFilters: FilterType = { ...params }
+
+    if (params.minPrice && params.maxPrice) {
+      newFilters.priceRange = [params.minPrice, params.maxPrice]
+    } else if (params.minPrice) {
+      newFilters.priceRange = [params.minPrice]
+    } else if (params.maxPrice) {
+      newFilters.priceRange = [0, params.maxPrice]
+    }
+    delete newFilters.minPrice
+    delete newFilters.maxPrice
+
+    return newFilters
+  }
+
+  const countFilter = (filters: FilterType): number => {
+    filters = filtersToParams(filters)
+
+    const count = Object.values(filters).reduce((pre, value) => {
+      if (Array.isArray(value)) {
+        return pre + value.length
+      }
+      return value !== null && value !== undefined ? pre + 1 : pre
+    }, 0)
+
+    return count >= 3 ? count - 3 : count
+  }
+
+  const [params, setParams] = useState<FilterType>(filtersToParams(filters))
 
   const { data, isLoading } = useSWRImmutable<PagedType<ProductType>>(
     [FASHION_API, params],
@@ -141,41 +179,29 @@ export default function Products({ brands, categories, material }: IProps) {
     setMaterialOptions(newMaterials)
   }, [material])
 
-  const toggleFilterOpen = () => setFilterOpen(!filterOpen)
+  const toggleFilterOpen = () => {
+    setFilterOpen(!filterOpen)
+    const p = filtersToParams(filters)
+
+    if (JSON.stringify(params) != JSON.stringify(p)) {
+      setFilters(paramsToFilters(params))
+    }
+  }
 
   const getFilters = (filters: FilterType, p?: number, pSize?: number) => {
-    let newParams: Filters = { ...filters }
-
-    if (filters.sales && filters.sales.length > 0) {
-      filters.sales.forEach((item) => {
-        newParams[item] = true
-      })
-    }
-    if (!filters.rating) delete newParams.rating
-
-    if (filters.priceRange && filters.priceRange[0] === filters.priceRange[1]) {
-      newParams.minPrice = filters.priceRange[0]
-    } else {
-      if (filters.priceRange && filters.priceRange[0]) {
-        newParams.minPrice = filters.priceRange[0]
-      }
-      if (filters.priceRange && filters.priceRange[1]) {
-        newParams.maxPrice = filters.priceRange[1]
-      }
-    }
-    delete newParams.priceRange
+    let newParams: FilterType = filtersToParams(filters)
 
     newParams.page = p ?? currentPage
     newParams.pageSize = pSize ?? pageSize
 
-    const url = new URLSearchParams()
-    Object.entries(newParams).forEach(([key, value]) => url.set(key, value))
-    router.replace(`${pathname}?${url.toString()}`)
-
+    setRealTimeParams(newParams)
     setParams(newParams)
   }
 
-  const onChangeFilters = (type: FilterTypes, values: string | string[] | number | number[]) => {
+  const onChangeFilters = (
+    type: FilterTypes,
+    values: string | string[] | number | number[] | boolean,
+  ) => {
     const newFilters = {
       ...filters,
       [type]: values,
@@ -219,22 +245,25 @@ export default function Products({ brands, categories, material }: IProps) {
         <Title level={3}>Tất cả sản phẩm</Title>
         <Flex align="center" className="space-x-2">
           <Select
+            disabled={data && data.items.length <= 0}
             placeholder="Sắp xếp theo: "
             labelRender={(item) => 'Sắp xếp: ' + item.label}
             value={filters.sorter}
             onChange={(e) => onChangeFilters(FilterTypes.SORTER, e)}
             className="w-full sm:w-64"
+            rootClassName="z-10"
             options={sortOpts}
           />
-          <Badge color="orange" count={countFilter(filters)}>
+          <Badge count={countFilter(filters)}>
             <Button onClick={toggleFilterOpen}>
               <FunnelPlotOutlined /> Bộ lọc
             </Button>
           </Badge>
         </Flex>
       </div>
-      {data?.items && data.items.length <= 0 ? (
+      {data && data.items.length <= 0 ? (
         <Result
+          className="py-0"
           status="404"
           title="Không tìm thấy sản phẩm phù hợp"
           subTitle="Xin lỗi, chúng tôi không tìm thấy sản phẩm nào phù hợp với yêu cầu của bạn."
@@ -245,131 +274,20 @@ export default function Products({ brands, categories, material }: IProps) {
           }
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6">
-          {data?.items.map((product, i) => {
-            if (product.discountPercent) {
-              const discountedPrice =
-                product.price - product.price * ((product.discountPercent ?? 0) / 100.0)
-              return (
-                <Link
-                  key={i}
-                  href={{
-                    pathname: `/fashions/${product.id}`,
-                    query: { name: product.name },
-                  }}
-                >
-                  <Badge.Ribbon text={`-${product.discountPercent}%`} color="red">
-                    <Card
-                      hoverable
-                      className="h-[25rem]"
-                      styles={{
-                        cover: { height: '70%' },
-                        body: { height: '30%', padding: '1rem' },
-                      }}
-                      cover={
-                        <>
-                          <Image
-                            src={toNextImageLink(product.imageUrl)}
-                            alt="Product Image"
-                            width={0}
-                            height={0}
-                            sizes="100vw"
-                            priority={i < 5}
-                            quality={100}
-                            className="w-full h-full object-cover border"
-                          />
-                          {/* <Divider className="m-0" /> */}
-                        </>
-                      }
-                    >
-                      <Meta
-                        title={product.name}
-                        description={
-                          <div className="space-y-1">
-                            <div className="text-red-500 font-semibold text-lg">
-                              {formatVND.format(discountedPrice)}
-                              <span className="ml-2 text-sm text-gray-500 line-through">
-                                {formatVND.format(product.price)}
-                              </span>
-                            </div>
-                            <Flex justify="space-between" align="center">
-                              <span>
-                                <Rate count={1} value={1} />{' '}
-                                <span className="text-gray-400">4.8</span>
-                              </span>
-                              <div className="text-xs 2xl:text-base text-slate-600">
-                                Đã bán {product.sold}
-                              </div>
-                            </Flex>
-                          </div>
-                        }
-                      />
-                    </Card>
-                  </Badge.Ribbon>
-                </Link>
-              )
-            }
-            return (
-              <Link
-                key={i}
-                href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}
-              >
-                <Card
-                  hoverable
-                  className="h-[25rem]"
-                  styles={{
-                    cover: { height: '70%' },
-                    body: { height: '30%', padding: '1rem' },
-                  }}
-                  cover={
-                    <>
-                      <Image
-                        src={toNextImageLink(product.imageUrl)}
-                        alt="Product Image"
-                        width={0}
-                        height={0}
-                        sizes="100vw"
-                        priority={i < 5}
-                        quality={100}
-                        className="w-full h-full object-cover border"
-                      />
-                    </>
-                  }
-                >
-                  <Meta
-                    title={product.name}
-                    description={
-                      <div className="space-y-1">
-                        <div className="text-red-500 font-semibold text-lg">
-                          {formatVND.format(product.price)}
-                        </div>
-                        <Flex justify="space-between" align="center" className="">
-                          <span>
-                            <Rate count={1} value={1} /> <span className="text-gray-400">4.8</span>
-                          </span>
-                          <div className="text-xs 2xl:text-base text-slate-600">
-                            Đã bán {product.sold}
-                          </div>
-                        </Flex>
-                      </div>
-                    }
-                  />
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
-      )}
-      {(data?.items && data.items.length <= 0) || (
-        <Pagination
-          align="center"
-          className="py-4"
-          current={currentPage}
-          pageSize={pageSize}
-          showSizeChanger
-          onChange={onChangeCurrentPage}
-          total={data?.totalItems}
-        />
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6">
+            <CardProduct products={data?.items} />
+          </div>
+          <Pagination
+            align="center"
+            className="py-4"
+            current={currentPage}
+            pageSize={pageSize}
+            showSizeChanger
+            onChange={onChangeCurrentPage}
+            total={data?.totalItems}
+          />
+        </>
       )}
 
       <Drawer
@@ -377,16 +295,16 @@ export default function Products({ brands, categories, material }: IProps) {
         open={filterOpen}
         placement="right"
         title={
-          <div>
-            Bộ lọc <Badge showZero count={countFilter(filters)} color="orange" />
+          <div className="flex items-center gap-2">
+            Bộ lọc <Badge count={countFilter(filters)} />
           </div>
         }
         footer={
           <div className="text-center space-x-2">
-            <Button danger onClick={clearFilter}>
+            <Button danger className="rounded-sm" onClick={clearFilter}>
               Xóa tất cả
             </Button>
-            <Button type="primary" onClick={handleFilters}>
+            <Button type="primary" danger className="rounded-sm" onClick={handleFilters}>
               Xem kết quả
             </Button>
           </div>
@@ -414,6 +332,13 @@ export default function Products({ brands, categories, material }: IProps) {
             onChange={(e) => onChangeFilters(FilterTypes.MATERIALS, e)}
             options={materialOptions}
           />
+          <Title level={5}>Giới tính</Title>
+          <Checkbox.Group
+            className="grid grid-cols-3 gap-1"
+            value={filters.genders}
+            onChange={(e) => onChangeFilters(FilterTypes.GENDERS, e)}
+            options={genderOpts}
+          />
           <Title level={5}>Đánh giá</Title>
           <div className="space-x-2">
             <Rate value={filters.rating} onChange={(e) => onChangeFilters(FilterTypes.RATING, e)} />
@@ -429,12 +354,22 @@ export default function Products({ brands, categories, material }: IProps) {
             step={50000}
           />
           <Title level={5}>Khuyến mãi</Title>
-          <Checkbox.Group
-            className="grid grid-cols-2 gap-1"
-            value={filters.sales}
-            onChange={(e) => onChangeFilters(FilterTypes.SALES, e)}
-            options={saleOptions}
-          />
+          <div>
+            <Checkbox
+              checked={filters.discount}
+              onChange={(e) => onChangeFilters(FilterTypes.DISCOUNT, e.target.checked)}
+            >
+              Đang giảm giá
+            </Checkbox>
+          </div>
+          <div>
+            <Checkbox
+              checked={filters.flashsale}
+              onChange={(e) => onChangeFilters(FilterTypes.FLASHSALE, e.target.checked)}
+            >
+              Flash sale
+            </Checkbox>
+          </div>
         </div>
       </Drawer>
     </>

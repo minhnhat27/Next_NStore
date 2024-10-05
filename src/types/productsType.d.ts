@@ -1,19 +1,25 @@
-interface Filters {
-  page: number
-  pageSize: number
+enum Gender {
+  'Nam',
+  'Nữ',
+  'Unisex',
+}
+
+interface Filters extends PaginationType {
   sorter?: string
   materialIds?: string[]
   categoryIds?: string[]
   brandIds?: string[]
   rating?: number
+  genders?: string[]
   minPrice?: number
   maxPrice?: number
-  [key: string]: any
+  discount?: boolean
+  flashsale?: boolean
 }
 
 interface FilterType extends Filters {
   priceRange?: number[]
-  sales?: string[]
+  [key: string]: any
 }
 
 interface ProductType {
@@ -35,10 +41,8 @@ interface ProductAttrsType {
   name: string
 }
 
-enum Gender {
-  'Nam',
-  'Nữ',
-  'Unisex',
+interface BrandType extends ProductAttrsType {
+  imageUrl: string
 }
 
 interface SizeInStock {
@@ -84,4 +88,12 @@ interface VNPayCallback {
   vnp_TxnRef: string
   vnp_SecureHashType?: string
   vnp_SecureHash: string
+}
+
+interface PayOSCallback {
+  code: string
+  id: string
+  cancel: string
+  status: string
+  orderCode: string
 }

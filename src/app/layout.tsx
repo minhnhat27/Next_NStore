@@ -7,6 +7,8 @@ import { AntdRegistry } from '@ant-design/nextjs-registry'
 
 import dynamic from 'next/dynamic'
 import { App } from 'antd'
+import Loading from './loading'
+import FavoriteProvider from '~/components/common/favorite-provider'
 
 const inter = Inter({ subsets: ['vietnamese'] })
 
@@ -15,7 +17,9 @@ export const metadata: Metadata = {
   description: 'Fashions Store',
 }
 
-const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-provider'))
+const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-provider'), {
+  ssr: false,
+})
 
 export default async function RootLayout({
   children,
@@ -35,11 +39,13 @@ export default async function RootLayout({
     <html lang="vi">
       <body className={inter.className}>
         <AuthProvider initialState={initialState}>
-          <AntdRegistry>
-            <AntdStyleProvider>
-              <App>{children}</App>
-            </AntdStyleProvider>
-          </AntdRegistry>
+          <FavoriteProvider>
+            <AntdRegistry>
+              <AntdStyleProvider>
+                <App>{children}</App>
+              </AntdStyleProvider>
+            </AntdRegistry>
+          </FavoriteProvider>
         </AuthProvider>
       </body>
     </html>

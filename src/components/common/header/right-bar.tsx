@@ -1,14 +1,17 @@
 'use client'
 
 import { Badge, Drawer, Dropdown, Flex, Input, MenuProps } from 'antd'
-import { FaHeart, FaSearch, FaShoppingBag, FaUser } from 'react-icons/fa'
+import { FaSearch, FaShoppingBag, FaUser } from 'react-icons/fa'
 import useAuth from '~/hooks/useAuth'
 import Link from 'next/link'
 import { logout } from '~/lib/auth-service'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { AuthActions } from '~/utils/auth-actions'
 import { UserOutlined } from '@ant-design/icons'
+import useSWRImmutable from 'swr/immutable'
+import { CART_API } from '~/utils/api-urls'
+import httpService from '~/lib/http-service'
 
 const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['items'] => [
   {
@@ -33,10 +36,17 @@ const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['ite
 
 export default function RightBar() {
   const { state, dispatch } = useAuth()
+  const session = state.userInfo?.session
+  const isAuthenticated = state.isAuthenticated
   const router = useRouter()
 
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchText, setSearchText] = useState('')
+  const [showSearch, setShowSearch] = useState<boolean>(false)
+  const [searchText, setSearchText] = useState<string>('')
+
+  const { data } = useSWRImmutable<number>(
+    isAuthenticated && [CART_API + '/count', session],
+    ([url, session]) => httpService.getWithSession(url, session),
+  )
 
   const handleLogout = async (): Promise<void> => {
     await logout()
@@ -67,10 +77,7 @@ export default function RightBar() {
             </span>
           </Link>
         )}
-        <Link href="/favorites">
-          <FaHeart className="text-slate-400 hover:text-slate-500 transition-colors text-xl" />
-        </Link>
-        <Badge count={0} showZero size="small">
+        <Badge count={data ?? 0} size="small">
           <Link href="/cart">
             <FaShoppingBag className="text-slate-400 hover:text-slate-500 transition-colors text-xl" />
           </Link>

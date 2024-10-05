@@ -5,10 +5,11 @@ import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/orders'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
     const auth: AuthHeaderType = await authHeader()
-    const res = await axios.get(API_URL, { headers: auth })
+    const res = await axios.get(API_URL, { headers: auth, params: searchParams })
     return NextSuccess(res.data, res.status)
   } catch (error: any) {
     return NextError(error)
