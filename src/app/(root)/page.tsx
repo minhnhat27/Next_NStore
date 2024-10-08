@@ -1,4 +1,5 @@
 import { GiftOutlined, RollbackOutlined, TruckOutlined } from '@ant-design/icons'
+import { Divider } from 'antd'
 import axios from 'axios'
 import Banner from '~/components/home/banner'
 import BestSeller from '~/components/home/best-seller'
@@ -26,7 +27,7 @@ export default async function Home() {
     <>
       <Banner images={images} />
       <div className="p-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 p-4 md:py-10 text-sx sm:text-sm md:text-base">
+        <div className="grid grid-cols-2 md:grid-cols-4 p-4 md:pt-10 text-sx sm:text-sm md:text-base">
           <div className="text-center py-4">
             <div className="h-2/3">
               <TruckOutlined className="text-4xl" />
@@ -60,10 +61,33 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <FlashSale />
-        <BestSeller />
+        <>
+          <Divider>
+            <div className="text-center my-6 font-bold text-xl md:text-3xl text-orange-600 font-sans">
+              Flash Sale
+            </div>
+          </Divider>
+          <FlashSale />
+        </>
+        <>
+          <Divider>
+            <div className="text-center my-6 font-semibold text-xl md:text-3xl text-blue-950 font-sans">
+              Sản phẩm bán chạy
+            </div>
+          </Divider>
+          <BestSeller />
+        </>
+
         <PopularBrands />
-        <ProductHighlight />
+
+        <>
+          <Divider>
+            <div className="text-center pb-6 font-semibold text-xl md:text-3xl text-blue-950 font-sans">
+              Sản phẩm nổi bật
+            </div>
+          </Divider>
+          <ProductHighlight />
+        </>
       </div>
     </>
   )

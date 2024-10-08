@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { createContext, useContext, useReducer } from 'react'
 import { AuthActionEnums } from '~/utils/auth-actions'
 
@@ -31,13 +32,13 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export default function AuthProvider({ children, initialState }: IProps) {
   const [state, dispatch] = useReducer(reducer, initialState)
-  return <AuthContext.Provider value={{ state, dispatch }}>{children}</AuthContext.Provider>
-}
+  const router = useRouter()
 
-// export const useAuth = () => {
-//   const context = useContext(AuthContext)
-//   if (context === undefined) {
-//     throw new Error('useAuth must be used within an AuthProvider')
-//   }
-//   return context
-// }
+  const redirectIfNoAuthenticated = () => !state.isAuthenticated && router.push('/login')
+
+  return (
+    <AuthContext.Provider value={{ redirectIfNoAuthenticated, state, dispatch }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}

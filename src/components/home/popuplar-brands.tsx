@@ -1,6 +1,6 @@
 'use client'
 
-import { Carousel, Divider, Skeleton } from 'antd'
+import { Carousel, Divider, Empty, Skeleton } from 'antd'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import useSWRImmutable from 'swr/immutable'
@@ -25,7 +25,7 @@ export default function PopularBrands() {
               <Skeleton.Image className="h-28 w-full" active key={i} />
             ))}
           </div>
-        ) : (
+        ) : data ? (
           <Carousel
             arrows
             infinite
@@ -38,7 +38,7 @@ export default function PopularBrands() {
               { breakpoint: 1024, settings: { slidesToShow: 4 } },
             ]}
           >
-            {data?.map((brand, i) => (
+            {data.map((brand, i) => (
               <Image
                 key={i}
                 src={toNextImageLink(brand.imageUrl)}
@@ -51,6 +51,8 @@ export default function PopularBrands() {
               />
             ))}
           </Carousel>
+        ) : (
+          <Empty />
         )}
       </div>
     </div>

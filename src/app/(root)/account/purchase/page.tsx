@@ -1,8 +1,11 @@
 'use client'
 
 import {
+  Badge,
   Button,
-  CountdownProps,
+  Divider,
+  Drawer,
+  List,
   Pagination,
   PaginationProps,
   Popconfirm,
@@ -11,19 +14,26 @@ import {
   TableProps,
   Tag,
 } from 'antd'
-import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { FaLocationDot } from 'react-icons/fa6'
 import useSWR from 'swr'
+import useSWRImmutable from 'swr/immutable'
+import OrderDetails from '~/components/account/order-details'
 import useAuth from '~/hooks/useAuth'
+import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
 import { ORDER_API } from '~/utils/api-urls'
 import {
   Cancel_Status,
   formatDate,
+  formatDateTime,
   formatVND,
   getOrderStatus,
   getPaymentDeadline,
   Received_Status,
+  toNextImageLink,
 } from '~/utils/common'
 
 const { Countdown } = Statistic
@@ -31,6 +41,7 @@ const { Countdown } = Statistic
 const columns = (
   handleCancelOrder: (id: number) => Promise<void>,
   payBack: (url: string | undefined) => void,
+  onViewDetail: (id: number) => void,
 ): TableProps<OrderType>['columns'] => [
   {
     title: 'Mã đơn',
@@ -82,9 +93,11 @@ const columns = (
             Đã thanh toán
           </Tag>
         ) : (
-          <Tag className="m-0" color="red">
-            Chưa thanh toán
-          </Tag>
+          item.orderStatus !== Cancel_Status && (
+            <Tag className="m-0" color="red">
+              Chưa thanh toán
+            </Tag>
+          )
         )}
       </>
     ),
@@ -97,11 +110,13 @@ const columns = (
 
       return (
         <div className="space-y-2">
-          <div className="space-x-2">
-            <Button className="rounded-sm">Chi tiết</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => onViewDetail(value)} className="rounded-sm">
+              Chi tiết
+            </Button>
             {item.orderStatus === 0 && (
               <Popconfirm title="Xác nhận hủy đơn hàng" onConfirm={() => handleCancelOrder(value)}>
-                <Button className="rounded-sm" danger>
+                <Button type="primary" className="rounded-sm" danger>
                   Hủy đơn
                 </Button>
               </Popconfirm>
@@ -141,16 +156,31 @@ const columns = (
 export default function Purchase() {
   const { state } = useAuth()
   const session = state.userInfo?.session
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { router, setRealTimeParams } = useRealTimeParams()
 
-  const [page, setPage] = useState<number>(1)
-  const [pageSize, setPageSize] = useState<number>(10)
+  const [orderId, setOrderId] = useState<number>()
+
+  const [page, setPage] = useState<number>(() => {
+    const p = searchParams.get('page')
+    return p ? parseInt(p) : 1
+  })
+
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const p = searchParams.get('pageSize')
+    return p ? parseInt(p) : 10
+  })
 
   const [params, setParams] = useState<PaginationType>({ page, pageSize })
 
   const { data, isLoading } = useSWR<PagedType<OrderType>>(
     [ORDER_API, session, params],
     ([ORDER_API, session, params]) => httpService.getWithSessionParams(ORDER_API, session, params),
+  )
+
+  const { data: order_details, isLoading: order_details_load } = useSWRImmutable<OrderDetailsType>(
+    orderId ? [ORDER_API, session, orderId] : undefined,
+    ([ORDER_API, session]) => httpService.getWithSession(ORDER_API + `/${orderId}`, session),
   )
 
   const [orders, setOrders] = useState<PagedType<OrderType>>()
@@ -175,7 +205,14 @@ export default function Purchase() {
   const onChangeCurrentPage: PaginationProps['onChange'] = (p, pSize) => {
     setPage(p)
     setPageSize(pSize)
-    setParams({ page: p, pageSize: pSize })
+
+    const pr = { page: p, pageSize: pSize }
+    setParams(pr)
+    setRealTimeParams(pr)
+  }
+
+  const onViewDetail = (id: number) => {
+    setOrderId(id)
   }
 
   return (
@@ -183,12 +220,12 @@ export default function Purchase() {
       <Table
         loading={isLoading}
         dataSource={orders?.items ?? []}
-        columns={columns(handleCancelOrder, payBack)}
+        columns={columns(handleCancelOrder, payBack, onViewDetail)}
         pagination={false}
         className="overflow-x-auto"
         rowKey={(item) => item.id}
       />
-      {(data?.items && data.items.length <= 0) || (
+      {data && data.items.length > 0 && (
         <Pagination
           align="center"
           className="py-4"
@@ -199,6 +236,78 @@ export default function Purchase() {
           total={data?.totalItems}
         />
       )}
+
+      <Drawer
+        open={!!orderId}
+        closable
+        destroyOnClose
+        loading={order_details_load}
+        onClose={() => setOrderId(undefined)}
+        title={`Chi tiết đơn hàng #${orderId}`}
+        footer={
+          order_details && (
+            <>
+              <div className="py-1">Ngày đặt hàng: {formatDateTime(order_details.orderDate)}</div>
+              <div>Phí vận chuyển: {formatVND.format(order_details.shippingCost)}</div>
+              <div className="flex justify-between">
+                <div>
+                  Tổng cộng:{' '}
+                  <span className="text-lg font-semibold">
+                    {formatVND.format(order_details.total)}
+                  </span>
+                </div>
+                <Button type="primary" danger>
+                  Đánh giá
+                </Button>
+              </div>
+            </>
+          )
+        }
+      >
+        {order_details && (
+          <>
+            <div className="flex items-center gap-1">
+              <FaLocationDot className="text-xl text-red-600" />
+              <div className="font-bold inline-block truncate">{order_details.receiver}</div>
+            </div>
+            <div>{order_details.deliveryAddress}</div>
+            <Divider />
+
+            <List
+              itemLayout="vertical"
+              size="large"
+              dataSource={order_details.productOrderDetails}
+              renderItem={(item) => (
+                <List.Item className="p-0" key={item.productName}>
+                  <List.Item.Meta
+                    avatar={
+                      <Image
+                        width={0}
+                        height={0}
+                        sizes="100vw"
+                        alt={item.productName}
+                        className="h-20 w-20"
+                        src={toNextImageLink(item.imageUrl)}
+                      />
+                    }
+                    title={<div className="truncate">{item.productName}</div>}
+                    description={
+                      <>
+                        <div>
+                          {item.quantity} x {formatVND.format(item.price)}
+                        </div>
+                        <div className="text-gray-500 font-semibold">
+                          Phân loại: {item.colorName} - {item.sizeName}
+                        </div>
+                      </>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </>
+        )}
+      </Drawer>
     </>
   )
 }

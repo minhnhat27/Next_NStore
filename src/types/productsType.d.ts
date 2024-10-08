@@ -33,6 +33,7 @@ interface ProductType {
   price: number
   categoryName: string
   brandName: string
+  rating: number
   imageUrl: string
 }
 

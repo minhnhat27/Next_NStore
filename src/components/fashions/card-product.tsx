@@ -10,13 +10,16 @@ const { Meta } = Card
 
 interface IProps {
   products?: ProductType[]
+  /** rem */
+  height?: number
+  object?: 'cover' | 'contain' | 'fill' | 'none'
 }
 
-export default function CardProduct({ products }: IProps) {
+export default function CardProduct({ products, object = 'cover', height = 24 }: IProps) {
   const { state } = useAuth()
   const { favorites, addFavorite, removeFavorite } = useFavorite()
 
-  if (!products) return <Empty />
+  if (!products || products.length === 0) return <Empty className="col-span-full" />
 
   return products.map((product, i) => {
     if (product.discountPercent) {
@@ -32,11 +35,12 @@ export default function CardProduct({ products }: IProps) {
         >
           <Badge.Ribbon text={`-${product.discountPercent}%`} color="red">
             <Card
+              loading={!product.id}
               hoverable
-              className="h-96"
+              style={{ height: `${height}rem` }}
               styles={{
-                cover: { height: '70%' },
-                body: { height: '30%', padding: '1rem' },
+                cover: { height: `${height - 7}rem` },
+                body: { height: '7rem', padding: '1rem' },
               }}
               cover={
                 <Image
@@ -47,7 +51,7 @@ export default function CardProduct({ products }: IProps) {
                   sizes="100vw"
                   priority={i < 5}
                   quality={100}
-                  className="w-full h-full object-cover border"
+                  className={`w-full h-full border object-${object}`}
                 />
               }
             >
@@ -63,7 +67,12 @@ export default function CardProduct({ products }: IProps) {
                     </div>
                     <div className="flex justify-between items-center">
                       <div>
-                        <Rate count={1} value={1} /> <span className="text-gray-400">4.8</span>
+                        <>
+                          <Rate disabled count={1} value={1} />{' '}
+                          <span className="text-gray-400 text-xs">
+                            {product.rating || 'Chưa có'}
+                          </span>
+                        </>
                       </div>
                       <div className="inline-flex gap-1 text-lg text-red-500">
                         {state.isAuthenticated &&
@@ -100,11 +109,12 @@ export default function CardProduct({ products }: IProps) {
     return (
       <Link key={i} href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}>
         <Card
+          loading={!product.id}
           hoverable
-          className="h-96"
+          style={{ height: `${height}rem` }}
           styles={{
-            cover: { height: '70%' },
-            body: { height: '30%', padding: '1rem' },
+            cover: { height: `${height - 7}rem` },
+            body: { height: '7rem', padding: '1rem' },
           }}
           cover={
             <>
@@ -116,7 +126,7 @@ export default function CardProduct({ products }: IProps) {
                 sizes="100vw"
                 priority={i < 5}
                 quality={100}
-                className="w-full h-full object-cover border"
+                className={`w-full h-full border object-${object}`}
               />
             </>
           }
@@ -130,7 +140,10 @@ export default function CardProduct({ products }: IProps) {
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <Rate count={1} value={1} /> <span className="text-gray-400">4.8</span>
+                    <>
+                      <Rate disabled count={1} value={1} />{' '}
+                      <span className="text-gray-400 text-xs">{product.rating || 'Chưa có'}</span>
+                    </>
                   </div>
                   <div className="inline-flex gap-1 text-lg text-red-500">
                     {state.isAuthenticated &&

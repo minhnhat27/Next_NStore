@@ -13,14 +13,14 @@ const Voice: React.FC<Props> = ({ onClick, className }) => {
           key={i}
           style={{ animationDuration: `${400 + i * 50}ms` }}
           className={`w-1 rounded-lg bg-slate-500 animate-sound`}
-        ></div>
+        />
       ))}
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
           style={{ animationDuration: `${400 + i * 20}ms` }}
           className={`w-1 rounded-lg bg-slate-500 animate-sound`}
-        ></div>
+        />
       ))}
     </div>
   )

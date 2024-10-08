@@ -1,14 +1,9 @@
-import { Divider, Image, Carousel } from 'antd'
+import { Image, Carousel } from 'antd'
 import React from 'react'
 
 export default function FlashSale() {
   return (
     <>
-      <Divider>
-        <div className="text-center animate-pulse my-6 uppercase font-semibold text-xl md:text-2xl text-orange-500">
-          Flash Sale
-        </div>
-      </Divider>
       <Carousel
         arrows
         infinite

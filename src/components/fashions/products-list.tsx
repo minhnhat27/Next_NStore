@@ -68,6 +68,7 @@ interface IProps {
 
 export default function Products({ brands, categories, material }: IProps) {
   const searchParams = useSearchParams()
+  const key = searchParams.get('key')
   const { setRealTimeParams } = useRealTimeParams()
 
   const [filterOpen, setFilterOpen] = useState<boolean>(false)
@@ -145,7 +146,10 @@ export default function Products({ brands, categories, material }: IProps) {
       return value !== null && value !== undefined ? pre + 1 : pre
     }, 0)
 
-    return count >= 3 ? count - 3 : count
+    let minus = 3
+    if (filters.key || filters.key === '') minus += 1
+
+    return count >= minus ? count - minus : count
   }
 
   const [params, setParams] = useState<FilterType>(filtersToParams(filters))
@@ -194,9 +198,23 @@ export default function Products({ brands, categories, material }: IProps) {
     newParams.page = p ?? currentPage
     newParams.pageSize = pSize ?? pageSize
 
-    setRealTimeParams(newParams)
     setParams(newParams)
+
+    const filteredFilters = Object.fromEntries(
+      Object.entries(newParams).filter(
+        ([key, value]) => value !== initFilters[key as keyof FilterType],
+      ),
+    )
+    setRealTimeParams(filteredFilters)
   }
+
+  useEffect(() => {
+    if (key) {
+      const newFilters = { ...filters, key: key }
+      setFilters(newFilters)
+      getFilters(newFilters)
+    }
+  }, [key])
 
   const onChangeFilters = (
     type: FilterTypes,
@@ -275,7 +293,7 @@ export default function Products({ brands, categories, material }: IProps) {
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
             <CardProduct products={data?.items} />
           </div>
           <Pagination

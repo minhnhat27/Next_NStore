@@ -88,7 +88,7 @@ const columns = (
   },
   {
     dataIndex: 'productName',
-    render: (value) => <div className="line-clamp-2">{value}</div>,
+    render: (value) => <div className="min-w-16 line-clamp-2">{value}</div>,
   },
   {
     title: 'Phân loại',
@@ -476,8 +476,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
   return (
     <>
       {cartItems && cartItems?.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2 col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
+          <div className="space-y-2 md:col-span-2">
             <Steps
               className="border px-4 pt-3 pb-2"
               size="small"
@@ -587,8 +587,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
                 <Space direction="vertical">
                   {paymentMethods.map((item, i) => {
                     let label = (
-                      <Flex align="center" gap={10}>
-                        <div>Cổng thanh toán {item.name.toUpperCase()}</div>
+                      <div className="flex items-center gap-2">
+                        <div>Cổng thanh toán {item.name}</div>
                         <Image
                           alt={item.name}
                           src={`images/${item.name}_Logo.png`}
@@ -599,7 +599,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
                           className={`w-6 h-auto ${!item.isActive && 'filter grayscale'}`}
                         />
                         {item.isActive || '(Không khả dụng)'}
-                      </Flex>
+                      </div>
                     )
 
                     if (item.name.toUpperCase() === 'COD')

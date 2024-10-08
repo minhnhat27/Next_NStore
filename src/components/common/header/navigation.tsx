@@ -42,7 +42,6 @@ export default function Navigation() {
   const pathname = usePathname()
   const [showNavbar, setShowNavbar] = useState(false)
 
-  // const regex = pathname.match(/^\/[^/]+/)?.at(0) ?? '/'
   return (
     <>
       <Flex align="center" className="shrink-0">

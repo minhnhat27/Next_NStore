@@ -25,6 +25,7 @@ type UserInfoType = {
 }
 
 type AuthContextType = {
+  redirectIfNoAuthenticated: () => void
   state: AuthStateType
   dispatch: React.Dispatch<AuthActionType>
 }

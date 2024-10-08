@@ -5,6 +5,17 @@ import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/orders'
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const auth: AuthHeaderType = await authHeader()
+    const res = await axios.get(API_URL + `/${params.id}`, { headers: auth })
+
+    return NextSuccess(res.data, res.status)
+  } catch (error: any) {
+    return NextError(error)
+  }
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth: AuthHeaderType = await authHeader()

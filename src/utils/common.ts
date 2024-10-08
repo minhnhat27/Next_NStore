@@ -79,7 +79,7 @@ export const searchAddress = (input: string, option?: ValueLabelType) => {
 }
 
 export const toNextImageLink = (url: string | undefined): string =>
-  url ? '/api/images?imageUrl=' + encodeURIComponent(url) : ''
+  url ? '/api/images?imageUrl=' + encodeURIComponent(url) : '/images/broken.png'
 
 export const shippingPrice = (price: number): number =>
   price >= 400000 || price === 0 ? 0 : price >= 200000 ? 10000 : 30000
@@ -126,3 +126,17 @@ export const Cancel_Status: number = 6
 export const Received_Status: number = 5
 
 export const getPaymentDeadline = (date: string) => new Date(date).getTime() + 1000 * 60 * 15
+
+export const initProduct: ProductType = {
+  id: 0,
+  name: '',
+  description: '',
+  enable: false,
+  gender: 0,
+  sold: 0,
+  discountPercent: 0,
+  price: 0,
+  categoryName: '',
+  brandName: '',
+  imageUrl: '',
+}

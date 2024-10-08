@@ -7,9 +7,8 @@ export const useRealTimeParams = () => {
   const setRealTimeParams = (params: Record<any, any>) => {
     const url = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => url.set(key, value))
-
-    router.replace(`${pathname}?${url.toString()}`)
+    router.replace(`${pathname}?${url.toString()}`, { scroll: false })
   }
 
-  return { setRealTimeParams }
+  return { router, pathname, setRealTimeParams }
 }

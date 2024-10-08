@@ -1,17 +1,17 @@
 'use client'
 
-import { Badge, Drawer, Dropdown, Flex, Input, MenuProps } from 'antd'
-import { FaSearch, FaShoppingBag, FaUser } from 'react-icons/fa'
+import { Badge, Dropdown, Flex, Input, MenuProps } from 'antd'
+import { FaShoppingBag, FaUser } from 'react-icons/fa'
 import useAuth from '~/hooks/useAuth'
 import Link from 'next/link'
 import { logout } from '~/lib/auth-service'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { AuthActions } from '~/utils/auth-actions'
 import { UserOutlined } from '@ant-design/icons'
 import useSWRImmutable from 'swr/immutable'
 import { CART_API } from '~/utils/api-urls'
 import httpService from '~/lib/http-service'
+import Search from './search'
 
 const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['items'] => [
   {
@@ -40,9 +40,6 @@ export default function RightBar() {
   const isAuthenticated = state.isAuthenticated
   const router = useRouter()
 
-  const [showSearch, setShowSearch] = useState<boolean>(false)
-  const [searchText, setSearchText] = useState<string>('')
-
   const { data } = useSWRImmutable<number>(
     isAuthenticated && [CART_API + '/count', session],
     ([url, session]) => httpService.getWithSession(url, session),
@@ -57,10 +54,7 @@ export default function RightBar() {
   return (
     <>
       <Flex align="center" className="space-x-4 text-xl cursor-pointer select-none">
-        <FaSearch
-          onClick={() => setShowSearch(!showSearch)}
-          className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 "
-        />
+        <Search />
         {state.isAuthenticated ? (
           <Dropdown
             menu={{ items: dropdownItems(state.userInfo?.fullname, handleLogout) }}
@@ -83,22 +77,6 @@ export default function RightBar() {
           </Link>
         </Badge>
       </Flex>
-      <Drawer
-        title="Tìm kiếm"
-        placement="top"
-        onClose={() => setShowSearch(false)}
-        open={showSearch}
-        styles={{ wrapper: { height: 'fit-content' } }}
-      >
-        <Input.Search
-          placeholder="Nhập sản phẩm cần tìm"
-          size="large"
-          className="w-full"
-          value={searchText}
-          allowClear
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-      </Drawer>
     </>
   )
 }
