@@ -7,6 +7,7 @@ import { LockOutlined, UserOutlined, MailOutlined, ArrowLeftOutlined } from '@an
 import { useRouter } from 'next/navigation'
 import AuthService from '~/lib/proxy-server-service/auth-service'
 import { showError } from '~/utils/common'
+import useCountdown from '~/hooks/useCountdown'
 
 const { Title } = Typography
 
@@ -25,19 +26,20 @@ const Register: React.FC = () => {
   const [formState, setFormState] = useState(State.EMAIL)
   const [loading, setLoading] = useState(false)
 
-  const [countdown, setCountdown] = useState(0)
+  // const [countdown, setCountdown] = useState(0)
+  const { countdown, setCountdown } = useCountdown()
 
   const previousFormState = () => setFormState(formState > 0 ? formState - 1 : formState)
 
   const nextFormState = () =>
     setFormState(formState < Object.keys(State).length - 1 ? formState + 1 : formState)
 
-  useEffect(() => {
-    if (countdown > 0) {
-      const timerId = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timerId)
-    }
-  }, [countdown])
+  // useEffect(() => {
+  //   if (countdown > 0) {
+  //     const timerId = setTimeout(() => setCountdown(countdown - 1), 1000)
+  //     return () => clearTimeout(timerId)
+  //   }
+  // }, [countdown])
 
   const handleSendOTP = async () => {
     try {

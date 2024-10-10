@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  Badge,
   Button,
   Divider,
   Drawer,
@@ -20,28 +19,33 @@ import { useEffect, useState } from 'react'
 import { FaLocationDot } from 'react-icons/fa6'
 import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
-import OrderDetails from '~/components/account/order-details'
+import ReviewProduct from '~/components/account/review-product'
 import useAuth from '~/hooks/useAuth'
 import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
+import { OrderStatus } from '~/types/enum'
 import { ORDER_API } from '~/utils/api-urls'
 import {
-  Cancel_Status,
   formatDate,
   formatDateTime,
   formatVND,
   getOrderStatus,
   getPaymentDeadline,
-  Received_Status,
   toNextImageLink,
 } from '~/utils/common'
 
 const { Countdown } = Statistic
 
+const Cancel_Status = OrderStatus['Đã hủy'].valueOf()
+const Received_Status = OrderStatus['Đã nhận hàng'].valueOf()
+
 const columns = (
   handleCancelOrder: (id: number) => Promise<void>,
   payBack: (url: string | undefined) => void,
-  onViewDetail: (id: number) => void,
+  onOpenDetail: (id: number) => void,
+  setId: (id: number) => void,
+  order_details_load: boolean,
+  order_details?: OrderDetailsType,
 ): TableProps<OrderType>['columns'] => [
   {
     title: 'Mã đơn',
@@ -56,11 +60,11 @@ const columns = (
   {
     title: 'Trạng thái',
     dataIndex: 'orderStatus',
-    render: (value) => {
+    render: (value, item) => {
       const colorMap = {
-        [Cancel_Status]: '#FF4D4F',
-        [Received_Status]: '#87d068',
         1: 'green',
+        [Cancel_Status]: '#FF4D4F',
+        [Received_Status]: '#16a34a',
         default: 'blue',
       }
 
@@ -70,9 +74,21 @@ const columns = (
       return value === 0 ? (
         status
       ) : (
-        <Tag className="m-0" color={color}>
-          {status}
-        </Tag>
+        <>
+          <div>
+            <Tag className="m-0" color={color}>
+              {status}
+            </Tag>
+          </div>
+          {item.orderStatus === Received_Status && (
+            <ReviewProduct
+              order_details_load={order_details_load}
+              order_details={order_details}
+              id={item.id}
+              getDetail={setId}
+            />
+          )}
+        </>
       )
     },
   },
@@ -82,7 +98,7 @@ const columns = (
     render: (value) => formatVND.format(value),
   },
   {
-    title: 'Thanh toán',
+    title: 'Phương thức T.T',
     dataIndex: 'paymentMethod',
     align: 'center',
     render: (value, item) => (
@@ -93,9 +109,10 @@ const columns = (
             Đã thanh toán
           </Tag>
         ) : (
-          item.orderStatus !== Cancel_Status && (
+          item.orderStatus !== Cancel_Status &&
+          item.payBackUrl && (
             <Tag className="m-0" color="red">
-              Chưa thanh toán
+              Chờ thanh toán
             </Tag>
           )
         )}
@@ -111,7 +128,7 @@ const columns = (
       return (
         <div className="space-y-2">
           <div className="flex gap-2">
-            <Button onClick={() => onViewDetail(value)} className="rounded-sm">
+            <Button onClick={() => onOpenDetail(value)} className="rounded-sm">
               Chi tiết
             </Button>
             {item.orderStatus === 0 && (
@@ -160,6 +177,8 @@ export default function Purchase() {
   const { router, setRealTimeParams } = useRealTimeParams()
 
   const [orderId, setOrderId] = useState<number>()
+
+  const [openDrawer, setOpenDrawer] = useState<boolean>(false)
 
   const [page, setPage] = useState<number>(() => {
     const p = searchParams.get('page')
@@ -211,8 +230,11 @@ export default function Purchase() {
     setRealTimeParams(pr)
   }
 
-  const onViewDetail = (id: number) => {
+  const setId = (id: number) => setOrderId(id)
+
+  const onOpenDetail = (id: number) => {
     setOrderId(id)
+    setOpenDrawer(true)
   }
 
   return (
@@ -220,7 +242,14 @@ export default function Purchase() {
       <Table
         loading={isLoading}
         dataSource={orders?.items ?? []}
-        columns={columns(handleCancelOrder, payBack, onViewDetail)}
+        columns={columns(
+          handleCancelOrder,
+          payBack,
+          onOpenDetail,
+          setId,
+          order_details_load,
+          order_details,
+        )}
         pagination={false}
         className="overflow-x-auto"
         rowKey={(item) => item.id}
@@ -236,13 +265,15 @@ export default function Purchase() {
           total={data?.totalItems}
         />
       )}
-
       <Drawer
-        open={!!orderId}
+        open={openDrawer}
         closable
         destroyOnClose
         loading={order_details_load}
-        onClose={() => setOrderId(undefined)}
+        onClose={() => {
+          setOrderId(undefined)
+          setOpenDrawer(false)
+        }}
         title={`Chi tiết đơn hàng #${orderId}`}
         footer={
           order_details && (

@@ -1,3 +1,5 @@
+import { OrderStatus } from '~/types/enum'
+
 export const formatVND = new Intl.NumberFormat('vi', {
   style: 'currency',
   currency: 'VND',
@@ -25,7 +27,7 @@ type error = {
   message?: string
 }
 
-export const showError = (error: error): string => {
+export const showError = (error: error | any | unknown): string => {
   if (typeof error.response?.data === 'string') {
     return error.response?.data || error.response?.message || error.message || 'Đã xảy ra lỗi'
   }
@@ -111,19 +113,9 @@ export const formatDateTime = (value: string | Date) => {
     .replaceAll('/', '-')
 }
 
-enum OrderStatus {
-  'Đang xử lý',
-  'Đã xác nhận',
-  'Chờ lấy hàng',
-  'Đang vận chuyển',
-  'Đang giao hàng',
-  'Đã nhận hàng',
-  'Đã hủy',
-}
-
 export const getOrderStatus = (index: number) => OrderStatus[index] ?? OrderStatus[0]
-export const Cancel_Status: number = 6
-export const Received_Status: number = 5
+// export const Cancel_Status: number = 6
+// export const Received_Status: number = 5
 
 export const getPaymentDeadline = (date: string) => new Date(date).getTime() + 1000 * 60 * 15
 
@@ -139,4 +131,28 @@ export const initProduct: ProductType = {
   categoryName: '',
   brandName: '',
   imageUrl: '',
+  rating: 0,
 }
+
+export const maskEmail = (email: string): string => {
+  const emailParts = email.split('@')
+  if (emailParts.length !== 2) {
+    return 'Email không hợp lệ'
+  }
+
+  const name = emailParts[0]
+  const domain = emailParts[1]
+
+  const visibleChars = name.length < 5 ? 2 : 5
+  const maskedName = name.substring(0, visibleChars).padEnd(name.length, '*')
+
+  return `${maskedName}@${domain}`
+}
+
+export const getBase64 = (file: any): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = (error) => reject(error)
+  })

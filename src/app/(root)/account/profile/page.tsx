@@ -1,13 +1,14 @@
 'use client'
 
-import { App, Button, Form, FormProps, Input, Select, Skeleton } from 'antd'
+import { App, Button, Form, FormProps, Input, Skeleton } from 'antd'
 import { useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
+import ChangeEmail from '~/components/account/change-email'
 import ChangeAddress from '~/components/cart/change-address'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
-import { ACCOUNT_API, PROVINCE_API } from '~/utils/api-urls'
-import { searchAddress, showError } from '~/utils/common'
+import { ACCOUNT_API } from '~/utils/api-urls'
+import { showError } from '~/utils/common'
 
 export default function Profile() {
   const [form] = Form.useForm()
@@ -19,6 +20,8 @@ export default function Profile() {
 
   const fullname = Form.useWatch('fullname', form)
   const phoneNumber = Form.useWatch('phoneNumber', form)
+
+  const [initInfo, setInitInfo] = useState<InfoType>()
 
   const {
     data: info,
@@ -43,7 +46,7 @@ export default function Profile() {
     ) {
       setDisabled(false)
     } else setDisabled(true)
-  }, [fullname, phoneNumber])
+  }, [fullname, phoneNumber, info])
 
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -51,7 +54,6 @@ export default function Profile() {
     try {
       setLoading(true)
       const result = await httpService.put(ACCOUNT_API + '/info', values)
-
       info_mutate({ email: info?.email, ...result })
       notification.success({
         message: 'Thành công',
@@ -93,74 +95,66 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex justify-center">
-      <div className="grid grid-cols-2 gap-4 w-full md:w-11/12 lg:w-3/4">
-        {info_loading ? (
-          <Skeleton active paragraph={{ rows: 8 }} />
-        ) : (
-          <Form
-            disabled={loading}
-            layout="vertical"
-            form={form}
-            name="info"
-            initialValues={{
-              phoneNumber: info?.phoneNumber,
-              fullname: info?.fullname,
-            }}
-            onFinish={handleChangeInfo}
-          >
-            <div className="flex justify-between items-center">
-              <Form.Item
-                label="Địa chỉ Email (Tên đăng nhập)"
+    <>
+      <div className="flex justify-center">
+        <div className="grid grid-cols-2 gap-4 w-full md:w-11/12 lg:w-3/4">
+          {info_loading ? (
+            <Skeleton active paragraph={{ rows: 8 }} />
+          ) : (
+            <Form
+              disabled={loading}
+              layout="vertical"
+              form={form}
+              name="info"
+              initialValues={{
+                phoneNumber: info?.phoneNumber,
+                fullname: info?.fullname,
+              }}
+              onFinish={handleChangeInfo}
+            >
+              <ChangeEmail info={info} info_mutate={info_mutate} />
+              <Form.Item<InfoType>
+                label="Họ và tên"
+                name="fullname"
                 rules={[{ required: true, message: 'Vui lòng nhập tên của bạn.' }]}
               >
-                <div className="truncate font-semibold">{info?.email}</div>
+                <Input size="large" placeholder="Tên của bạn" />
               </Form.Item>
-              <Button type="link" className="px-0 w-fit justify-self-end">
-                Thay đổi
+              <Form.Item<InfoType>
+                label="Số điện thoại"
+                name="phoneNumber"
+                rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }]}
+              >
+                <Input size="large" placeholder="Số điện thoại" />
+              </Form.Item>
+
+              <Button
+                htmlType="submit"
+                disabled={loading || disabled}
+                loading={loading}
+                type="primary"
+              >
+                Xác nhận
               </Button>
-            </div>
-            <Form.Item<InfoType>
-              label="Họ và tên"
-              name="fullname"
-              rules={[{ required: true, message: 'Vui lòng nhập tên của bạn.' }]}
-            >
-              <Input size="large" placeholder="Tên của bạn" />
-            </Form.Item>
-            <Form.Item<InfoType>
-              label="Số điện thoại"
-              name="phoneNumber"
-              rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }]}
-            >
-              <Input size="large" placeholder="Số điện thoại" />
-            </Form.Item>
-
-            <Button
-              htmlType="submit"
-              disabled={loading || disabled}
-              loading={loading}
-              type="primary"
-            >
-              Xác nhận
-            </Button>
-          </Form>
-        )}
-
-        <>
-          {address_loading ? (
-            <Skeleton active />
-          ) : (
-            <div className="">
-              <div>Địa chỉ giao hàng</div>
-              <ChangeAddress
-                className="mt-2"
-                address={address}
-                handleConfirmAddress={handleConfirmAddress}
-              />
-            </div>
+            </Form>
           )}
-        </>
+
+          <>
+            {address_loading ? (
+              <Skeleton active />
+            ) : (
+              <div className="">
+                <div>Địa chỉ giao hàng</div>
+                <ChangeAddress
+                  className="mt-2"
+                  address={address}
+                  handleConfirmAddress={handleConfirmAddress}
+                />
+              </div>
+            )}
+          </>
+        </div>
       </div>
-    </div>
+    </>
   )
 }

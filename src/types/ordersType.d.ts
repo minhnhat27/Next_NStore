@@ -14,11 +14,10 @@ interface DeliveryInfo {
 }
 
 interface ProductOrderDetails {
+  productId?: number
   productName: string
   sizeName: string
   colorName: string
-  sizeId: number
-  colorId: number
   originPrice: number
   price: number
   quantity: number
