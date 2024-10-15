@@ -2,7 +2,6 @@ import { HomeOutlined, ProductOutlined } from '@ant-design/icons'
 import { Metadata } from 'next'
 import BreadcrumbLink from '~/components/ui/breadcrumb'
 import Details from '../../../../components/fashions/product-details'
-import axios from 'axios'
 import { notFound } from 'next/navigation'
 
 // export const revalidate = 7200
@@ -43,13 +42,19 @@ export async function generateMetadata({ searchParams }: IProps): Promise<Metada
   }
 }
 
-export default async function ProductDetails({ searchParams }: IProps) {
+export default function ProductDetails({ params, searchParams }: IProps) {
+  const id = parseInt(params.id)
+
+  if (isNaN(id) || id <= 0) return notFound()
+
+  // console.log('Product ID:', id)
+
   return (
     <div className="p-4 space-y-4">
       <BreadcrumbLink
         items={breadcrumbItems(searchParams.name?.toString() ?? 'Chi tiết sản phẩm')}
       />
-      <Details />
+      <Details id={id} />
     </div>
   )
 }

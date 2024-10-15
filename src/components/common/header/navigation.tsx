@@ -21,16 +21,16 @@ const navigateItems: MenuItem[] = [
     children: [
       { key: '/fashions', label: <Link href="/fashions">Tất cả</Link>, theme: 'dark' },
       {
-        key: '/men-fashions',
-        label: <Link href="/men-fashions">Thời trang nam</Link>,
+        key: '/fashions/men',
+        label: <Link href="/fashions/men">Thời trang nam</Link>,
       },
       {
-        key: '/women-fashions',
-        label: <Link href="/women-fashions">Thời Trang nữ</Link>,
+        key: '/fashions/women',
+        label: <Link href="/fashions/women">Thời Trang nữ</Link>,
       },
       {
-        key: '/unisex-fashions',
-        label: <Link href="/unisex-fashions">Unisex</Link>,
+        key: '/fashions/unisex',
+        label: <Link href="/fashions/unisex">Unisex</Link>,
       },
     ],
   },

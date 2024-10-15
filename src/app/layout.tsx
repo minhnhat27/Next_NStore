@@ -9,11 +9,14 @@ import dynamic from 'next/dynamic'
 import { App } from 'antd'
 import Loading from './loading'
 import FavoriteProvider from '~/components/common/favorite-provider'
+import ChatBox from '~/components/chat/chat-box'
 
 const inter = Inter({ subsets: ['vietnamese'] })
 
+const storeName = process.env.NEXT_PUBLIC_STORE_NAME
+
 export const metadata: Metadata = {
-  title: 'VOA Store',
+  title: storeName,
   description: 'Fashions Store',
 }
 
@@ -42,7 +45,10 @@ export default async function RootLayout({
           <FavoriteProvider>
             <AntdRegistry>
               <AntdStyleProvider>
-                <App>{children}</App>
+                <App>
+                  {children}
+                  <ChatBox />
+                </App>
               </AntdStyleProvider>
             </AntdRegistry>
           </FavoriteProvider>

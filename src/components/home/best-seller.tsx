@@ -5,7 +5,7 @@ import Link from 'next/link'
 import useSWRImmutable from 'swr/immutable'
 import { FASHION_API } from '~/utils/api-urls'
 import httpService from '~/lib/http-service'
-import CardProduct from '../fashions/card-product'
+import CardProduct from '../ui/card-product'
 
 export default function BestSeller() {
   const params: FilterType = { page: 1, pageSize: 4, sorter: '0' }

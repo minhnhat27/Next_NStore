@@ -1,9 +1,5 @@
 import { Card, Flex } from 'antd'
 import { Metadata } from 'next'
-import Image from 'next/image'
-import Link from 'next/link'
-import Header from '~/components/common/header'
-import WapperLayout from '~/components/layout/wapper'
 
 export const metadata: Metadata = {
   title: 'Đăng nhập | Đăng ký',

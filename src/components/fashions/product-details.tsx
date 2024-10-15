@@ -7,101 +7,70 @@ import {
   Carousel,
   CountdownProps,
   Divider,
-  Flex,
   InputNumber,
   Rate,
   Statistic,
-  Tabs,
-  TabsProps,
   Image as AntdImage,
   App,
   Skeleton,
+  Result,
 } from 'antd'
 import Image from 'next/image'
-import { useParams, useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import React, { useCallback, useEffect, useState } from 'react'
 import { BsFire } from 'react-icons/bs'
 import useSWR, { mutate } from 'swr'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
 import { CART_API, FASHION_API } from '~/utils/api-urls'
 import { formatVND, showError, toNextImageLink } from '~/utils/common'
+import Reviews from './reviews'
+import Heart from '../ui/heart'
 
 const { Countdown } = Statistic
 
-const detailItems = (
-  description?: string,
-  isShowMore?: boolean,
-  setIsShowMore?: React.Dispatch<React.SetStateAction<boolean>>,
-): TabsProps['items'] => [
-  {
-    key: '1',
-    label: 'Chi tiết sản phẩm',
-    children: (
-      <div className="space-y-4">
-        <div className="grid grid-cols-12">
-          <div>Mô tả</div>
-          <div className="col-span-11">
-            {description
-              ? description?.split('\n').length > 5 && !isShowMore
-                ? description
-                    ?.split('\n')
-                    .slice(0, 5)
-                    .map((row, i) => <div key={i}>{row}</div>)
-                : description?.split('\n').map((row, i) => <div key={i}>{row}</div>)
-              : 'Chưa có mô tả'}
-            {description && description?.split('\n').length > 5 && (
-              <Button
-                type="link"
-                className="p-0"
-                onClick={() => {
-                  setIsShowMore && setIsShowMore(!isShowMore)
-                }}
-              >
-                {!isShowMore ? 'Xem thêm' : 'Thu gọn'}
-              </Button>
-            )}
-          </div>
-          {/* <pre className="col-span-11">{description ?? 'Chưa có mô tả'}</pre> */}
-        </div>
-        <div className="grid grid-cols-12">
-          <div>Chất liệu</div>
-          <div className="col-span-11">95% Polyester 5% Spandex</div>
-        </div>
-      </div>
-    ),
-  },
-  { key: '2', label: 'Đánh giá sản phẩm', children: 'Chưa có đánh giá nào' },
-]
+interface IProps {
+  id: number
+}
 
-export default function Details() {
+export default function Details({ id }: IProps) {
   const { state } = useAuth()
   const router = useRouter()
-  const params = useParams<{ id: string }>()
 
   const { notification } = App.useApp()
   const [images, setImages] = useState<string[]>()
   const [visible, setVisible] = useState<boolean>(false)
 
-  const { data: product, isLoading } = useSWR<ProductDetailsType>(
-    `${FASHION_API}/${params.id}`,
-    httpService.get,
-  )
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useSWR<ProductDetailsType>(id ? `${FASHION_API}/${id}` : undefined, httpService.get)
 
   const [currentImage, setCurrentImage] = useState<string>()
 
-  const initCartItem: CartItemType = { productId: parseInt(params.id), quantity: 1 }
+  const initCartItem: CartItemType = { productId: id, quantity: 1 }
 
   const [disabledColors, setDisabledColors] = useState<boolean[]>([])
   const [disabledSizes, setDisabledSizes] = useState<boolean[]>([])
 
   const [maxQuantity, setMaxQuantity] = useState<number>(0)
-  const [isShowMore, setIsShowMore] = useState<boolean>(false)
+  // const [isShowMore, setIsShowMore] = useState<boolean>(false)
 
   const [selected, setSelected] = useState<CartItemType>(initCartItem)
   const [selectedError, setSelectedError] = useState<boolean>(false)
 
   const [addCartLoading, setAddCartLoading] = useState<boolean>(false)
+
+  const checkSelectedComplete = useCallback((): boolean => {
+    return (
+      selected.colorId !== undefined &&
+      selected.sizeId !== undefined &&
+      selected.quantity !== undefined &&
+      selected.quantity > 0
+    )
+  }, [selected])
 
   useEffect(() => {
     if (product) {
@@ -118,17 +87,16 @@ export default function Details() {
       product?.colorSizes
         .find((e) => e.id === selected?.colorId)
         ?.sizeInStocks.find((e) => e.sizeId === selected?.sizeId)?.inStock ?? 1
+
     if (selected.quantity && selected.quantity > max) {
-      setSelected({ ...selected, quantity: max })
+      setSelected((prevSelected) => ({ ...prevSelected, quantity: max }))
     }
     setMaxQuantity(max)
-    if (selectedError) {
-      setSelectedError(!checkSelectedComplete())
-    }
-  }, [selected.colorId, selected.sizeId, product])
+    if (selectedError) setSelectedError(!checkSelectedComplete())
+  }, [selected, product, checkSelectedComplete, selectedError])
 
   const onSelectColor = (colorId: number, imageUrl: string) => {
-    setSelected({ ...selected, colorId: colorId })
+    setSelected((pre) => ({ ...pre, colorId: colorId }))
     setCurrentImage(imageUrl)
     const color = product?.colorSizes.find((e) => e.id === colorId)
     if (color) {
@@ -137,7 +105,7 @@ export default function Details() {
   }
 
   const onSelectSize = (sizeId: number) => {
-    setSelected({ ...selected, sizeId: sizeId })
+    setSelected((pre) => ({ ...pre, sizeId: sizeId }))
     if (product) {
       const colors = product?.colorSizes.map((color) => {
         const size = color.sizeInStocks.find((e) => e.sizeId === sizeId)
@@ -149,15 +117,6 @@ export default function Details() {
 
   const onFinishFlashSale: CountdownProps['onFinish'] = () => {
     console.log('finished!')
-  }
-
-  const checkSelectedComplete = (): boolean => {
-    return (
-      selected.colorId !== undefined &&
-      selected.sizeId !== undefined &&
-      selected.quantity !== undefined &&
-      selected.quantity > 0
-    )
   }
 
   const addToCart = async () => {
@@ -194,8 +153,22 @@ export default function Details() {
         await httpService.post(CART_API, selected)
 
         notification.success({
-          message: 'Thêm vào giỏ hàng thành công',
-          description: `Đã thêm ${selected.quantity} sản phẩm vào giỏ hàng`,
+          message: 'Thành công',
+          description: (
+            <>
+              <div>Đã thêm sản phẩm vào giỏ hàng</div>
+              <Link href="/cart">
+                <Button
+                  type="link"
+                  onClick={() => notification.destroy('addToCart')}
+                  className="px-0"
+                >
+                  Xem giỏ hàng
+                </Button>
+              </Link>
+            </>
+          ),
+          key: 'addToCart',
           className: 'text-green-500',
         })
 
@@ -217,27 +190,52 @@ export default function Details() {
     } else setSelectedError(true)
   }
 
-  // if (isLoading) return <Skeleton active paragraph={{ rows: 10 }} />
+  if (error)
+    return (
+      <Result
+        status={404}
+        title="Không tìm thấy sản phẩm"
+        extra={
+          <Button type="primary" onClick={router.back}>
+            Quay lại
+          </Button>
+        }
+      />
+    )
 
   return (
     <>
       <div className="p-4">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {isLoading ? (
             <>
-              <Skeleton.Image active className="w-full h-full" />
-              <Skeleton active paragraph={{ rows: 12 }} className="col-span-2" />
+              <Skeleton.Image active className="w-full h-[50vh] md:h-full" />
+              <Skeleton active paragraph={{ rows: 12 }} className="md:col-span-2" />
             </>
           ) : (
-            <>
-              <div className="space-y-2">
-                {!currentImage ||
-                  (product && product.discountPercent > 0 ? (
-                    <Badge.Ribbon
-                      text={`-${product?.discountPercent}%`}
-                      color="red"
-                      rootClassName="border bg-white drop-shadow-sm"
-                    >
+            product && (
+              <>
+                <div className="flex flex-col gap-2">
+                  {!currentImage ||
+                    (product.discountPercent > 0 ? (
+                      <Badge.Ribbon
+                        text={`-${product.discountPercent}%`}
+                        color="red"
+                        rootClassName="border bg-white drop-shadow-sm"
+                      >
+                        <Image
+                          src={toNextImageLink(currentImage)}
+                          alt="Product Image"
+                          width={0}
+                          height={0}
+                          priority
+                          sizes="100vw"
+                          onClick={() => setVisible(true)}
+                          quality={100}
+                          className="h-[27rem] object-contain object-center w-full cursor-pointer"
+                        />
+                      </Badge.Ribbon>
+                    ) : (
                       <Image
                         src={toNextImageLink(currentImage)}
                         alt="Product Image"
@@ -247,78 +245,68 @@ export default function Details() {
                         sizes="100vw"
                         onClick={() => setVisible(true)}
                         quality={100}
-                        className="h-[27rem] object-contain object-center w-full cursor-pointer"
+                        className="h-[27rem] object-contain object-center w-full border bg-white drop-shadow-sm cursor-pointer"
                       />
-                    </Badge.Ribbon>
-                  ) : (
-                    <Image
-                      src={toNextImageLink(currentImage)}
-                      alt="Product Image"
-                      width={0}
-                      height={0}
-                      priority
-                      sizes="100vw"
-                      onClick={() => setVisible(true)}
-                      quality={100}
-                      className="h-[27rem] object-contain object-center w-full border bg-white drop-shadow-sm cursor-pointer"
-                    />
-                  ))}
-                <Carousel
-                  dots={false}
-                  arrows
-                  infinite={false}
-                  slidesToShow={5}
-                  className="w-full h-16 px-4 border bg-gray-200 drop-shadow"
-                >
-                  {images &&
-                    currentImage &&
-                    images.map((url, i) => (
-                      <div key={i} className="px-1 outline-none">
-                        <Image
-                          src={toNextImageLink(url)}
-                          alt="Product Image"
-                          width={0}
-                          height={0}
-                          onClick={() => setCurrentImage(url)}
-                          sizes="100vw"
-                          quality={75}
-                          className={`w-full h-16 object-contain object-center cursor-pointer hover:border hover:border-red-500 ${
-                            currentImage === url && 'border-2 border-red-500'
-                          }`}
-                        />
-                      </div>
                     ))}
-                </Carousel>
-              </div>
-              <div className="px-4 col-span-2 flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="text-2xl font-semibold">{product?.name}</div>
+                  <Carousel
+                    dots={false}
+                    arrows
+                    infinite={false}
+                    slidesToShow={5}
+                    responsive={[
+                      { breakpoint: 480, settings: { slidesToShow: 5 } },
+                      { breakpoint: 768, settings: { slidesToShow: 6 } },
+                      { breakpoint: 1024, settings: { slidesToShow: 4 } },
+                    ]}
+                    className="h-16 px-4 border bg-gray-200 drop-shadow"
+                  >
+                    {images &&
+                      currentImage &&
+                      images.map((url, i) => (
+                        <div key={i} className="px-1 outline-none">
+                          <Image
+                            src={toNextImageLink(url)}
+                            alt="Product Image"
+                            width={0}
+                            height={0}
+                            onClick={() => setCurrentImage(url)}
+                            sizes="100vw"
+                            quality={75}
+                            className={`w-full h-16 object-contain object-center cursor-pointer hover:border hover:border-red-500 ${
+                              currentImage === url && 'border-2 border-red-500'
+                            }`}
+                          />
+                        </div>
+                      ))}
+                  </Carousel>
+                </div>
+                <div className="md:px-4 md:col-span-2 flex flex-col gap-2 ">
+                  <div className="text-2xl font-semibold line-clamp-2">{product.name}</div>
                   <div className="space-x-2">
-                    <Rate allowHalf disabled={true} value={4.5} />
-                    <span>4.5</span>
+                    <Rate allowHalf disabled={true} value={product.rating} />
+                    <span>{product?.rating}</span>
                     <Divider type="vertical" />
                     <span>Đã bán {product?.sold}</span>
+                    <Divider type="vertical" />
+                    <Heart productId={product?.id} label />
                   </div>
                   <div className="border">
-                    <Flex
-                      justify="space-between"
-                      align="center"
-                      className="text-xl rounded-sm bg-gradient-to-r from-red-700 to-red-500 text-white py-1 px-2"
-                    >
-                      <div className="flex items-center gap-1">
-                        <BsFire className="text-2xl text-orange-500" />
+                    <div className="flex justify-between items-center text-xl rounded-sm bg-gradient-to-r from-red-700 to-red-500 text-white py-1 px-2">
+                      <div className="flex items-center gap-2">
+                        <BsFire className="text-lg md:text-2xl text-orange-500" />
                         <div>Flash Sale</div>
                       </div>
-                      <Flex align="center" className="space-x-2">
-                        <div className="text-lg">Kết thúc trong</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm md:text-lg">Kết thúc trong</div>
                         <Countdown
                           className="animate-pulse"
                           value={Date.now() + 1000 * 60 * 30}
                           onFinish={onFinishFlashSale}
                           valueStyle={{ color: 'white' }}
+                          // format="mm:ss"
                         />
-                      </Flex>
-                    </Flex>
+                      </div>
+                    </div>
                     <div className="space-x-2 p-6 bg-gray-100">
                       <span className="text-red-600 text-3xl font-semibold">
                         {product &&
@@ -333,8 +321,6 @@ export default function Details() {
                       )}
                     </div>
                   </div>
-                </div>
-                <div className="space-y-2">
                   <div
                     className={`grid grid-cols-5 gap-4 px-6 py-2 ${
                       selectedError && 'bg-red-50 border border-red-400'
@@ -396,7 +382,7 @@ export default function Details() {
                       <div className="text-red-500 col-span-5">Vui lòng chọn phân loại</div>
                     )}
                   </div>
-                  <Flex justify="end" className="space-x-4">
+                  <div className="flex flex-1 justify-end items-end gap-2">
                     <Button danger size="large" type="primary" className="rounded-sm p-6">
                       Mua ngay
                     </Button>
@@ -408,12 +394,12 @@ export default function Details() {
                       className="rounded-sm p-6"
                     >
                       <ShoppingCartOutlined />
-                      <span>Thêm vào giỏ hàng</span>
+                      <span className="hidden xs:flex">Thêm vào giỏ hàng</span>
                     </Button>
-                  </Flex>
+                  </div>
                 </div>
-              </div>
-            </>
+              </>
+            )
           )}
         </div>
         {currentImage && (
@@ -427,13 +413,7 @@ export default function Details() {
             }}
           />
         )}
-        <Tabs
-          className="mt-4 border px-4 pb-4 bg-white"
-          defaultActiveKey="1"
-          type="line"
-          size="large"
-          items={detailItems(product?.description, isShowMore, setIsShowMore)}
-        />
+        {product && <Reviews id={product.id} description={product.description} />}
       </div>
     </>
   )

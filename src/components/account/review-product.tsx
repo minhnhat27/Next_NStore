@@ -6,7 +6,7 @@ import {
   Form,
   FormProps,
   GetProp,
-  Image,
+  Image as AntImage,
   Input,
   Modal,
   Rate,
@@ -14,7 +14,7 @@ import {
   UploadFile,
   UploadProps,
 } from 'antd'
-import { useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import httpService from '~/lib/http-service'
 import { ORDER_API } from '~/utils/api-urls'
 import { getBase64, showError } from '~/utils/common'
@@ -37,12 +37,7 @@ type ReviewType = {
 
 type UploadType = { productId: number; files: UploadFile[] }
 
-export default function ReviewProduct({
-  id,
-  order_details_load,
-  order_details,
-  getDetail,
-}: IProps) {
+const ReviewProduct = ({ id, order_details_load, order_details, getDetail }: IProps) => {
   const { notification } = App.useApp()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState<boolean>(false)
@@ -129,7 +124,7 @@ export default function ReviewProduct({
   return (
     <>
       {previewImage && (
-        <Image
+        <AntImage
           wrapperStyle={{ display: 'none' }}
           preview={{
             visible: previewOpen,
@@ -150,14 +145,14 @@ export default function ReviewProduct({
           htmlType: 'submit',
           danger: true,
           className: 'rounded-sm',
-          loading: loading,
         }}
+        confirmLoading={loading}
         cancelButtonProps={{ className: 'rounded-sm', disabled: loading }}
         destroyOnClose
         centered
         title={`Đánh giá đơn hàng #${id}`}
         className="rounded-sm"
-        styles={{ content: { borderRadius: 3 } }}
+        styles={{ content: { borderRadius: 3, margin: '0.5rem 0' } }}
         maskClosable={false}
         modalRender={(dom) => (
           <Form layout="vertical" form={form} name="changeEmail" onFinish={onFinish}>
@@ -254,8 +249,10 @@ export default function ReviewProduct({
         )}
       </Modal>
       <Button type="link" onClick={openModel} className="px-0 rounded-sm text-yellow-500">
-        Đánh giá ngay <Rate value={1} count={1} />
+        Đánh giá <Rate value={1} count={1} />
       </Button>
     </>
   )
 }
+
+export default memo(ReviewProduct)

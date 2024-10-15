@@ -1,9 +1,8 @@
 'use client'
 
 import { App, Spin } from 'antd'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import useSWR from 'swr'
 import httpService from '~/lib/http-service'
 import { PAYMENT_API } from '~/utils/api-urls'
 import NotFound from '../not-found'
@@ -13,54 +12,70 @@ export default function Payment() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const urlParams = new URLSearchParams(searchParams)
-  const gateway = urlParams.get('gateway')
+  // const urlParams = new URLSearchParams(searchParams)
+  const urlParamsRef = useRef(new URLSearchParams(searchParams))
+  const gateway = urlParamsRef.current.get('gateway')
 
-  let params = undefined
-  let callbackUrl = undefined
-
-  if (gateway === 'payos') {
-    params = Object.fromEntries(urlParams.entries()) as unknown as PayOSCallback
-    if (Object.values(params).some((value) => !value)) return <NotFound />
-
-    callbackUrl = '/payos-callback'
-  } else if (gateway === 'vnpay') {
-    params = Object.fromEntries(urlParams.entries()) as unknown as VNPayCallback
-    if (
-      !params.vnp_TmnCode ||
-      !params.vnp_Amount ||
-      !params.vnp_SecureHash ||
-      !params.vnp_ResponseCode ||
-      !params.vnp_TransactionStatus ||
-      !params.vnp_TransactionNo ||
-      Object.entries(params).length === 0
-    ) {
-      return <NotFound />
-    }
-
-    callbackUrl = '/vnpay-callback'
-  } else return <NotFound />
-
-  const { isLoading, error } = useSWR([PAYMENT_API + callbackUrl, params], ([url, params]) =>
-    httpService.getWithParams(url, params),
-  )
+  const [params, setParams] = useState<any>()
+  const [callbackUrl, setCallbackUrl] = useState<string>()
 
   useEffect(() => {
-    if (!isLoading) {
-      error
-        ? notification.error({
-            message: 'Thanh toán thất bại',
-            description: 'Vui lòng thanh toán lại',
-            className: 'text-red-500',
-          })
-        : notification.success({
+    if (gateway === 'payos') {
+      const newParams = Object.fromEntries(
+        urlParamsRef.current.entries(),
+      ) as unknown as PayOSCallback
+      if (Object.values(newParams).some((value) => !value)) {
+        setParams(undefined)
+        setCallbackUrl(undefined)
+      }
+      setParams(newParams)
+      setCallbackUrl('/payos-callback')
+    } else if (gateway === 'vnpay') {
+      const newParams = Object.fromEntries(
+        urlParamsRef.current.entries(),
+      ) as unknown as VNPayCallback
+      if (
+        !newParams.vnp_TmnCode ||
+        !newParams.vnp_Amount ||
+        !newParams.vnp_SecureHash ||
+        !newParams.vnp_ResponseCode ||
+        !newParams.vnp_TransactionStatus ||
+        !newParams.vnp_TransactionNo ||
+        Object.entries(newParams).length === 0
+      ) {
+        setParams(undefined)
+        setCallbackUrl(undefined)
+      }
+      setParams(newParams)
+      setCallbackUrl('/vnpay-callback')
+    }
+  }, [gateway, urlParamsRef])
+
+  useEffect(() => {
+    const handlePayment = async () => {
+      if (params && callbackUrl) {
+        try {
+          await httpService.getWithParams(PAYMENT_API + callbackUrl, params)
+          notification.success({
             message: 'Thanh toán thành công',
             description: 'Vui lòng kiểm tra lại đơn hàng của bạn',
             className: 'text-green-500',
           })
-      router.replace('/account/purchase')
+        } catch (error) {
+          notification.error({
+            message: 'Thanh toán thất bại',
+            description: 'Vui lòng thanh toán lại',
+            className: 'text-red-500',
+          })
+        } finally {
+          router.replace('/account/purchase')
+        }
+      }
     }
-  }, [isLoading])
+    handlePayment()
+  }, [params, callbackUrl, notification, router])
+
+  if (!params || !callbackUrl || !gateway) return <NotFound />
 
   return (
     <div className="h-screen flex justify-center items-center">

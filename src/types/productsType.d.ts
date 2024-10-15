@@ -1,9 +1,3 @@
-enum Gender {
-  'Nam',
-  'Nữ',
-  'Unisex',
-}
-
 interface Filters extends PaginationType {
   sorter?: string
   materialIds?: string[]
@@ -25,7 +19,6 @@ interface FilterType extends Filters {
 interface ProductType {
   id: number
   name: string
-  description: string
   enable: boolean
   gender: number
   sold: number
@@ -34,7 +27,16 @@ interface ProductType {
   categoryName: string
   brandName: string
   rating: number
+  ratingCount: number
   imageUrl: string
+}
+
+interface ProductReviewsType {
+  id: string
+  description?: string
+  star: number
+  username: string
+  imagesUrls: string[]
 }
 
 interface ProductAttrsType {
@@ -59,20 +61,10 @@ interface ColorSizes {
   sizeInStocks: SizeInStock[]
 }
 
-interface ProductDetailsType {
-  id: number
-  name: string
-  description?: string
-  enable: boolean
-  gender: Gender
-  sold: number
-  discountPercent: number
-  price: number
-  categoryId: number
-  brandId: number
-  materialIds: number[]
+interface ProductDetailsType extends ProductType {
   colorSizes: ColorSizes[]
   imageUrls: string[]
+  description: string
 }
 
 interface VNPayCallback {

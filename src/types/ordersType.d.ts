@@ -1,10 +1,12 @@
 interface OrderType {
   id: number
   orderDate: string
+  receivedDate?: string
+  reviewed?: boolean
   total: number
   amountPaid: number
   paymentMethod: string
-  orderStatus: number
+  orderStatus?: number
   payBackUrl?: string
 }
 

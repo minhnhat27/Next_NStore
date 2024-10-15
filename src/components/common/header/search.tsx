@@ -1,8 +1,9 @@
 import { AutoComplete, AutoCompleteProps, Drawer, Empty, Input } from 'antd'
 import debounce from 'debounce'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FaSearch } from 'react-icons/fa'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
@@ -20,6 +21,30 @@ export default function Search() {
   )
 
   const [options, setOptions] = useState<AutoCompleteProps['options']>([])
+
+  const searchResult = (product: ProductType) => ({
+    label: (
+      <Link
+        href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}
+        onClick={() => setShowSearch(false)}
+        className="text-black"
+      >
+        <div className="w-full inline-flex gap-2">
+          <div className="w-20 h-20 flex justify-center items-center">
+            <Image
+              height={0}
+              width={0}
+              sizes="100vw"
+              className="h-auto w-auto object-contain object-center"
+              src={toNextImageLink(product.imageUrl)}
+              alt={product.name}
+            />
+          </div>
+          <div className="line-clamp-2">{product.name}</div>
+        </div>
+      </Link>
+    ),
+  })
 
   useEffect(() => {
     if (data) setOptions(data.map((product) => searchResult(product)))
@@ -39,32 +64,6 @@ export default function Search() {
       router.push(`/fashions?key=${value}`)
     }
   }
-
-  const onSelect = (product: ProductType) => {
-    console.log('on select')
-
-    setShowSearch(false)
-    router.push(`/fashions/${product.id}/?name=${product.name}`)
-  }
-
-  const searchResult = (product: ProductType) => ({
-    // value: product.name,
-    label: (
-      <div onClick={() => onSelect(product)} className="inline-flex gap-2">
-        <div className="w-20 h-20 flex justify-center items-center">
-          <Image
-            height={0}
-            width={0}
-            sizes="100vw"
-            className="h-auto w-auto object-contain object-center"
-            src={toNextImageLink(product.imageUrl)}
-            alt={product.name}
-          />
-        </div>
-        <div className="line-clamp-2">{product.name}</div>
-      </div>
-    ),
-  })
 
   return (
     <>

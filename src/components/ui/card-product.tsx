@@ -2,9 +2,11 @@ import { HeartFilled, HeartOutlined } from '@ant-design/icons'
 import { Badge, Card, Empty, Rate } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState } from 'react'
 import useAuth from '~/hooks/useAuth'
 import useFavorite from '~/hooks/useFavorites'
-import { formatVND, toNextImageLink } from '~/utils/common'
+import { formatCount, formatVND, toNextImageLink } from '~/utils/common'
+import Heart from './heart'
 
 const { Meta } = Card
 
@@ -37,10 +39,9 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
             <Card
               loading={!product.id}
               hoverable
-              style={{ height: `${height}rem` }}
               styles={{
                 cover: { height: `${height - 7}rem` },
-                body: { height: '7rem', padding: '1rem' },
+                body: { padding: '1rem' },
               }}
               cover={
                 <Image
@@ -69,30 +70,22 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
                       <div>
                         <>
                           <Rate disabled count={1} value={1} />{' '}
-                          <span className="text-gray-400 text-xs">
-                            {product.rating || 'Chưa có'}
+                          <span className="text-gray-500 text-xs">
+                            {product.rating ? (
+                              <>
+                                {product.rating}{' '}
+                                <span className="text-[0.6rem] text-gray-400">
+                                  ({formatCount(product.ratingCount)})
+                                </span>
+                              </>
+                            ) : (
+                              'Chưa có'
+                            )}
                           </span>
                         </>
                       </div>
-                      <div className="inline-flex gap-1 text-lg text-red-500">
-                        {state.isAuthenticated &&
-                          (favorites.includes(product.id) ? (
-                            <HeartFilled
-                              onClick={async (e) => {
-                                e.preventDefault()
-                                await removeFavorite(product.id)
-                              }}
-                              className="transition-transform hover:scale-125 px-1"
-                            />
-                          ) : (
-                            <HeartOutlined
-                              onClick={async (e) => {
-                                e.preventDefault()
-                                await addFavorite(product.id)
-                              }}
-                              className="transition-transform hover:scale-125 px-1"
-                            />
-                          ))}
+                      <div className="flex items-center gap-1">
+                        <Heart productId={product.id} />
                         <div className="text-xs 2xl:text-base text-slate-600">
                           Đã bán {product.sold}
                         </div>
@@ -111,10 +104,9 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
         <Card
           loading={!product.id}
           hoverable
-          style={{ height: `${height}rem` }}
           styles={{
             cover: { height: `${height - 7}rem` },
-            body: { height: '7rem', padding: '1rem' },
+            body: { padding: '1rem' },
           }}
           cover={
             <>
@@ -142,28 +134,22 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
                   <div>
                     <>
                       <Rate disabled count={1} value={1} />{' '}
-                      <span className="text-gray-400 text-xs">{product.rating || 'Chưa có'}</span>
+                      <span className="text-gray-500 text-xs">
+                        {product.rating ? (
+                          <>
+                            {product.rating}{' '}
+                            <span className="text-[0.6rem] text-gray-400">
+                              ({formatCount(product.ratingCount)})
+                            </span>
+                          </>
+                        ) : (
+                          'Chưa có'
+                        )}
+                      </span>
                     </>
                   </div>
-                  <div className="inline-flex gap-1 text-lg text-red-500">
-                    {state.isAuthenticated &&
-                      (favorites.includes(product.id) ? (
-                        <HeartFilled
-                          onClick={async (e) => {
-                            e.preventDefault()
-                            await removeFavorite(product.id)
-                          }}
-                          className="transition-transform hover:scale-125 px-1"
-                        />
-                      ) : (
-                        <HeartOutlined
-                          onClick={async (e) => {
-                            e.preventDefault()
-                            await addFavorite(product.id)
-                          }}
-                          className="transition-transform hover:scale-125 px-1"
-                        />
-                      ))}
+                  <div className="flex items-center gap-1">
+                    <Heart productId={product.id} />
                     <div className="text-xs 2xl:text-base text-slate-600">
                       Đã bán {product.sold}
                     </div>

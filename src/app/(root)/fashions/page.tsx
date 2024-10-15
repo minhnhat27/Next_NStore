@@ -57,7 +57,11 @@ async function getMaterialss() {
   }
 }
 
-export default async function Fashions() {
+interface IProps {
+  filters?: FilterType
+}
+
+export default async function Fashions({ filters }: IProps) {
   const brandsData: Promise<ProductAttrsType[]> = getBrands()
   const categoriesData: Promise<ProductAttrsType[]> = getCategories()
   const materialsData: Promise<ProductAttrsType[]> = getMaterialss()
@@ -71,7 +75,12 @@ export default async function Fashions() {
   return (
     <div className="p-4 space-y-4">
       <BreadcrumbLink items={breadcrumbItems} />
-      <Products brands={brands} categories={categories} material={materials} />
+      <Products
+        filtersProp={filters}
+        brands={brands}
+        categories={categories}
+        material={materials}
+      />
     </div>
   )
 }

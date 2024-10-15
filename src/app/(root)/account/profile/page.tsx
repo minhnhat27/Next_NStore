@@ -12,7 +12,7 @@ import { showError } from '~/utils/common'
 
 export default function Profile() {
   const [form] = Form.useForm()
-  const { state } = useAuth()
+  const { state, dispatch } = useAuth()
   const { notification } = App.useApp()
   const session = state.userInfo?.session
 
@@ -20,8 +20,6 @@ export default function Profile() {
 
   const fullname = Form.useWatch('fullname', form)
   const phoneNumber = Form.useWatch('phoneNumber', form)
-
-  const [initInfo, setInitInfo] = useState<InfoType>()
 
   const {
     data: info,
@@ -54,7 +52,9 @@ export default function Profile() {
     try {
       setLoading(true)
       const result = await httpService.put(ACCOUNT_API + '/info', values)
+      
       info_mutate({ email: info?.email, ...result })
+      // dispatch()
       notification.success({
         message: 'Thành công',
         description: 'Đã cập nhật thông tin',

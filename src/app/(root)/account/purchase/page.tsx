@@ -80,7 +80,7 @@ const columns = (
               {status}
             </Tag>
           </div>
-          {item.orderStatus === Received_Status && (
+          {item.orderStatus === Received_Status && !item.reviewed && (
             <ReviewProduct
               order_details_load={order_details_load}
               order_details={order_details}
@@ -254,17 +254,15 @@ export default function Purchase() {
         className="overflow-x-auto"
         rowKey={(item) => item.id}
       />
-      {data && data.items.length > 0 && (
-        <Pagination
-          align="center"
-          className="py-4"
-          current={page}
-          pageSize={pageSize}
-          showSizeChanger
-          onChange={onChangeCurrentPage}
-          total={data?.totalItems}
-        />
-      )}
+      <Pagination
+        align="center"
+        className="py-4"
+        current={page}
+        pageSize={pageSize}
+        showSizeChanger
+        onChange={onChangeCurrentPage}
+        total={data?.totalItems}
+      />
       <Drawer
         open={openDrawer}
         closable
@@ -280,16 +278,11 @@ export default function Purchase() {
             <>
               <div className="py-1">Ngày đặt hàng: {formatDateTime(order_details.orderDate)}</div>
               <div>Phí vận chuyển: {formatVND.format(order_details.shippingCost)}</div>
-              <div className="flex justify-between">
-                <div>
-                  Tổng cộng:{' '}
-                  <span className="text-lg font-semibold">
-                    {formatVND.format(order_details.total)}
-                  </span>
-                </div>
-                <Button type="primary" danger>
-                  Đánh giá
-                </Button>
+              <div>
+                Tổng cộng:{' '}
+                <span className="text-lg font-semibold">
+                  {formatVND.format(order_details.total)}
+                </span>
               </div>
             </>
           )

@@ -1,6 +1,11 @@
 'use client'
 
-import { DeleteFilled, DropboxOutlined } from '@ant-design/icons'
+import {
+  DeleteFilled,
+  DropboxOutlined,
+  InfoCircleFilled,
+  InfoCircleOutlined,
+} from '@ant-design/icons'
 import {
   App,
   Button,
@@ -189,7 +194,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
   const router = useRouter()
 
-  const { notification } = App.useApp()
+  const { notification, modal } = App.useApp()
 
   const [cartItems, setCartItems] = useState<CartItemsType[]>([])
   const [checkedItems, setCheckedItems] = useState<CartItemsType[]>([])
@@ -197,11 +202,11 @@ export default function CartDetails({ paymentMethods }: IProps) {
   const [voucher, setVoucher] = useState<VoucherType>()
   const [total, setTotal] = useState<TotalType>(initTotal)
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | undefined>(
-    paymentMethods.at(0),
+  const [paymentMethodId, setPaymentMethodId] = useState<number | undefined>(
+    paymentMethods.at(0)?.id,
   )
 
-  const onChangePaymentMethod = (e: RadioChangeEvent) => setPaymentMethod(e.target.value)
+  const onChangePaymentMethod = (e: RadioChangeEvent) => setPaymentMethodId(e.target.value)
 
   const {
     data,
@@ -230,23 +235,6 @@ export default function CartDetails({ paymentMethods }: IProps) {
     isMutating: isMutatingCreateOrder,
     trigger: createOrderTrigger,
   } = useSWRMutation(ORDER_API, sendCreateOrder)
-
-  useEffect(() => {
-    if (data) setCartItems(data)
-  }, [data])
-
-  useEffect(() => {
-    if (checkedItems.length > 0) {
-      const updatedCheckedItems = cartItems.filter((checkedItem) =>
-        checkedItems.some((cartItem) => cartItem.id === checkedItem.id),
-      )
-      setCheckedItems(updatedCheckedItems)
-    }
-  }, [cartItems])
-
-  useEffect(() => {
-    calcPrice(checkedItems)
-  }, [checkedItems, voucher])
 
   const calcPrice = useCallback(
     (newCheckedItems: CartItemsType[]) => {
@@ -291,8 +279,22 @@ export default function CartDetails({ paymentMethods }: IProps) {
         voucher: voucherDiscount,
       }))
     },
-    [shippingPrice, voucher],
+    [voucher, notification],
   )
+
+  useEffect(() => {
+    if (data) setCartItems(data)
+  }, [data])
+
+  useEffect(() => {
+    setCheckedItems((pre) =>
+      cartItems.filter((checkedItem) => pre.some((cartItem) => cartItem.id === checkedItem.id)),
+    )
+  }, [cartItems])
+
+  useEffect(() => {
+    calcPrice(checkedItems)
+  }, [checkedItems, voucher, calcPrice])
 
   const handleUpdateCartItem = async (id: string, dataUpdate: UpdateCartItem) => {
     try {
@@ -431,12 +433,12 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
       const receiver = [address?.name, address?.phoneNumber].join(', ')
 
-      if (paymentMethod) {
+      if (paymentMethodId) {
         const order: CreateOrderType = {
           total: total.total(),
           shippingCost: total.shipping,
           code: voucher?.code,
-          paymentMethodId: paymentMethod.id,
+          paymentMethodId: paymentMethodId,
           receiver: receiver,
           deliveryAddress: delivery,
           cartIds: checkedItems.map((item) => item.id),
@@ -444,8 +446,10 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
         const url = await createOrderTrigger(order)
         // const url = await httpService.post(ORDER_API, order)
+        mutate([`${CART_API}/count`, state.userInfo?.session])
 
-        if (paymentMethod.name.toUpperCase() != 'COD') {
+        const paymentMethodName = paymentMethods.find((e) => e.id === paymentMethodId)?.name
+        if (paymentMethodName && paymentMethodName.toUpperCase() != 'COD') {
           router.push(url)
         } else {
           notification.success({
@@ -580,7 +584,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
             </div>
             <div className="border py-4 px-6 drop-shadow-sm">
               <Radio.Group
-                value={paymentMethod ?? paymentMethods.at(0)}
+                value={paymentMethodId ?? paymentMethods.at(0)?.id}
                 onChange={onChangePaymentMethod}
                 size="large"
               >
@@ -606,7 +610,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
                       label = <div>Thanh toán khi nhận hàng</div>
 
                     return (
-                      <Radio key={i} value={item} disabled={!item.isActive}>
+                      <Radio key={i} value={item.id} disabled={!item.isActive}>
                         {label}
                       </Radio>
                     )
@@ -619,7 +623,34 @@ export default function CartDetails({ paymentMethods }: IProps) {
               size="large"
               type="primary"
               danger
-              onClick={handleCreateOrder}
+              onClick={() =>
+                modal.confirm({
+                  title: 'Xác nhận đặt hàng',
+                  content: (
+                    <>
+                      <div>Bạn chắc chắn đặt đơn hàng này?</div>
+                      {checkedItems.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div key={i} className="truncate w-2/3 font-semibold">
+                            {item.quantity} x {item.productName}
+                          </div>
+                          <div className="">
+                            {item.colorName} - {item.sizeName}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ),
+                  icon: <InfoCircleFilled className="text-blue-500" />,
+                  onOk: handleCreateOrder,
+                  footer: (_, { OkBtn, CancelBtn }) => (
+                    <>
+                      <CancelBtn />
+                      <OkBtn />
+                    </>
+                  ),
+                })
+              }
               loading={isMutatingCreateOrder}
               disabled={
                 checkedItems.length <= 0 || addressError || paymentMethods.every((e) => !e.isActive)

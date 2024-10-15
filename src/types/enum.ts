@@ -12,3 +12,9 @@ export enum OrderStatus {
   'Đã nhận hàng',
   'Đã hủy',
 }
+
+export enum Gender {
+  'Nam',
+  'Nữ',
+  'Unisex',
+}

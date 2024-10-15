@@ -20,12 +20,13 @@ import {
   Typography,
 } from 'antd'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
 import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
-import CardProduct from './card-product'
+import CardProduct from '../ui/card-product'
+import { initFilters } from '~/utils/initType'
 
 const { Title } = Typography
 
@@ -35,19 +36,14 @@ const sortOpts = [
   { value: '2', label: 'Giá từ cao đến thấp' },
   { value: '3', label: 'Mới nhất' },
 ]
+
 const genderOpts = [
   { value: '0', label: 'Nam' },
   { value: '1', label: 'Nữ' },
   { value: '2', label: 'Unisex' },
 ]
 
-const initFilters: FilterType = {
-  sorter: '0',
-  page: 1,
-  pageSize: 10,
-}
-
-enum FilterTypes {
+enum FilterEnums {
   SORTER = 'sorter',
   CATEGORIES = 'categoryIds',
   BRANDS = 'brandIds',
@@ -64,9 +60,10 @@ interface IProps {
   brands: ProductAttrsType[]
   categories: ProductAttrsType[]
   material: ProductAttrsType[]
+  filtersProp?: FilterType
 }
 
-export default function Products({ brands, categories, material }: IProps) {
+export default function Products({ brands, categories, material, filtersProp }: IProps) {
   const searchParams = useSearchParams()
   const key = searchParams.get('key')
   const { setRealTimeParams } = useRealTimeParams()
@@ -74,7 +71,7 @@ export default function Products({ brands, categories, material }: IProps) {
   const [filterOpen, setFilterOpen] = useState<boolean>(false)
 
   const [filters, setFilters] = useState<FilterType>(() => {
-    var p = { ...initFilters }
+    let p = filtersProp || { ...initFilters }
 
     const urlParams = new URLSearchParams(searchParams)
     urlParams?.forEach((value, key) => {
@@ -101,18 +98,18 @@ export default function Products({ brands, categories, material }: IProps) {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageSize, setPageSize] = useState<number>(10)
 
-  const filtersToParams = (filters: FilterType) => {
-    let newParams: FilterType = { ...filters }
-    if (!filters.rating) delete newParams.rating
+  const filtersToParams = (t_filters: FilterType) => {
+    let newParams: FilterType = { ...t_filters }
+    if (!t_filters.rating) delete newParams.rating
 
-    if (filters.priceRange && filters.priceRange[0] === filters.priceRange[1]) {
-      newParams.minPrice = filters.priceRange[0]
+    if (t_filters.priceRange && t_filters.priceRange[0] === t_filters.priceRange[1]) {
+      newParams.minPrice = t_filters.priceRange[0]
     } else {
-      if (filters.priceRange && filters.priceRange[0]) {
-        newParams.minPrice = filters.priceRange[0]
+      if (t_filters.priceRange && t_filters.priceRange[0]) {
+        newParams.minPrice = t_filters.priceRange[0]
       }
-      if (filters.priceRange && filters.priceRange[1]) {
-        newParams.maxPrice = filters.priceRange[1]
+      if (t_filters.priceRange && t_filters.priceRange[1]) {
+        newParams.maxPrice = t_filters.priceRange[1]
       }
     }
     delete newParams.priceRange
@@ -120,15 +117,15 @@ export default function Products({ brands, categories, material }: IProps) {
     return newParams
   }
 
-  const paramsToFilters = (params: FilterType) => {
-    let newFilters: FilterType = { ...params }
+  const paramsToFilters = (t_params: FilterType) => {
+    let newFilters: FilterType = { ...t_params }
 
-    if (params.minPrice && params.maxPrice) {
-      newFilters.priceRange = [params.minPrice, params.maxPrice]
-    } else if (params.minPrice) {
-      newFilters.priceRange = [params.minPrice]
-    } else if (params.maxPrice) {
-      newFilters.priceRange = [0, params.maxPrice]
+    if (t_params.minPrice && t_params.maxPrice) {
+      newFilters.priceRange = [t_params.minPrice, t_params.maxPrice]
+    } else if (t_params.minPrice) {
+      newFilters.priceRange = [t_params.minPrice]
+    } else if (t_params.maxPrice) {
+      newFilters.priceRange = [0, t_params.maxPrice]
     }
     delete newFilters.minPrice
     delete newFilters.maxPrice
@@ -136,10 +133,10 @@ export default function Products({ brands, categories, material }: IProps) {
     return newFilters
   }
 
-  const countFilter = (filters: FilterType): number => {
-    filters = filtersToParams(filters)
+  const countFilter = (t_filters: FilterType): number => {
+    const count_filters = deleteFilterInProps(filtersToParams(t_filters))
 
-    const count = Object.values(filters).reduce((pre, value) => {
+    const count = Object.values(count_filters).reduce((pre, value) => {
       if (Array.isArray(value)) {
         return pre + value.length
       }
@@ -147,7 +144,7 @@ export default function Products({ brands, categories, material }: IProps) {
     }, 0)
 
     let minus = 3
-    if (filters.key || filters.key === '') minus += 1
+    if (count_filters.key || count_filters.key === '') minus += 1
 
     return count >= minus ? count - minus : count
   }
@@ -192,21 +189,49 @@ export default function Products({ brands, categories, material }: IProps) {
     }
   }
 
-  const getFilters = (filters: FilterType, p?: number, pSize?: number) => {
-    let newParams: FilterType = filtersToParams(filters)
-
-    newParams.page = p ?? currentPage
-    newParams.pageSize = pSize ?? pageSize
-
-    setParams(newParams)
-
-    const filteredFilters = Object.fromEntries(
-      Object.entries(newParams).filter(
-        ([key, value]) => value !== initFilters[key as keyof FilterType],
-      ),
-    )
-    setRealTimeParams(filteredFilters)
+  const deleteFalsy = (p: FilterType) => {
+    Object.keys(p).forEach((key) => {
+      if (!p[key]) {
+        delete p[key]
+      }
+    })
+    return p
   }
+
+  const deleteFilterInProps = useCallback(
+    (ft: FilterType) => {
+      if (filtersProp) {
+        Object.keys(filtersProp).forEach((key) => {
+          if (ft[key] !== initFilters[key as keyof FilterType]) {
+            delete ft[key]
+          }
+        })
+      }
+      return ft
+    },
+    [filtersProp],
+  )
+
+  const getFilters = useCallback(
+    (filters: FilterType, p?: number, pSize?: number) => {
+      let newParams: FilterType = filtersToParams(filters)
+
+      newParams.page = p ?? currentPage
+      newParams.pageSize = pSize ?? pageSize
+      newParams = deleteFalsy(newParams)
+
+      setParams(newParams)
+
+      let filteredFilters = Object.fromEntries(
+        Object.entries(newParams).filter(
+          ([key, value]) => value !== initFilters[key as keyof FilterType],
+        ),
+      ) as FilterType
+
+      setRealTimeParams(deleteFilterInProps(filteredFilters))
+    },
+    [currentPage, pageSize, deleteFilterInProps, setRealTimeParams],
+  )
 
   useEffect(() => {
     if (key) {
@@ -217,7 +242,7 @@ export default function Products({ brands, categories, material }: IProps) {
   }, [key])
 
   const onChangeFilters = (
-    type: FilterTypes,
+    type: FilterEnums,
     values: string | string[] | number | number[] | boolean,
   ) => {
     const newFilters = {
@@ -228,11 +253,11 @@ export default function Products({ brands, categories, material }: IProps) {
     if (Array.isArray(values) && values.length <= 0) {
       delete newFilters[type]
     }
-    setFilters(newFilters)
-    if (type === FilterTypes.SORTER) getFilters(newFilters)
+    setFilters(deleteFalsy(newFilters))
+    if (type === FilterEnums.SORTER) getFilters(newFilters)
   }
 
-  const clearFilter: ButtonProps['onClick'] = () => setFilters(initFilters)
+  const clearFilter: ButtonProps['onClick'] = () => setFilters({ ...initFilters, ...filtersProp })
 
   const handleFilters: ButtonProps['onClick'] = () => {
     setCurrentPage(1)
@@ -267,7 +292,7 @@ export default function Products({ brands, categories, material }: IProps) {
             placeholder="Sắp xếp theo: "
             labelRender={(item) => 'Sắp xếp: ' + item.label}
             value={filters.sorter}
-            onChange={(e) => onChangeFilters(FilterTypes.SORTER, e)}
+            onChange={(e) => onChangeFilters(FilterEnums.SORTER, e)}
             className="w-full sm:w-64"
             rootClassName="z-10"
             options={sortOpts}
@@ -333,33 +358,37 @@ export default function Products({ brands, categories, material }: IProps) {
           <Checkbox.Group
             className="grid grid-cols-2 gap-1"
             value={filters.categoryIds}
-            onChange={(e) => onChangeFilters(FilterTypes.CATEGORIES, e)}
+            onChange={(e) => onChangeFilters(FilterEnums.CATEGORIES, e)}
             options={categoryOptions}
           />
           <Title level={5}>Thương hiệu</Title>
           <Checkbox.Group
             className="grid grid-cols-2 gap-1"
             value={filters.brandIds}
-            onChange={(e) => onChangeFilters(FilterTypes.BRANDS, e)}
+            onChange={(e) => onChangeFilters(FilterEnums.BRANDS, e)}
             options={brandOptions}
           />
           <Title level={5}>Chất liệu</Title>
           <Checkbox.Group
             className="grid grid-cols-2 gap-1"
             value={filters.materialIds}
-            onChange={(e) => onChangeFilters(FilterTypes.MATERIALS, e)}
+            onChange={(e) => onChangeFilters(FilterEnums.MATERIALS, e)}
             options={materialOptions}
           />
-          <Title level={5}>Giới tính</Title>
-          <Checkbox.Group
-            className="grid grid-cols-3 gap-1"
-            value={filters.genders}
-            onChange={(e) => onChangeFilters(FilterTypes.GENDERS, e)}
-            options={genderOpts}
-          />
+          {!filtersProp?.genders && (
+            <>
+              <Title level={5}>Giới tính</Title>
+              <Checkbox.Group
+                className="grid grid-cols-3 gap-1"
+                value={filters.genders}
+                onChange={(e) => onChangeFilters(FilterEnums.GENDERS, e)}
+                options={genderOpts}
+              />
+            </>
+          )}
           <Title level={5}>Đánh giá</Title>
           <div className="space-x-2">
-            <Rate value={filters.rating} onChange={(e) => onChangeFilters(FilterTypes.RATING, e)} />
+            <Rate value={filters.rating} onChange={(e) => onChangeFilters(FilterEnums.RATING, e)} />
             <span>trở lên</span>
           </div>
           <Title level={5}>Khoảng giá</Title>
@@ -368,14 +397,14 @@ export default function Products({ brands, categories, material }: IProps) {
             min={0}
             max={2000000}
             value={filters.priceRange}
-            onChange={(e) => onChangeFilters(FilterTypes.PRICERANGE, e)}
+            onChange={(e) => onChangeFilters(FilterEnums.PRICERANGE, e)}
             step={50000}
           />
           <Title level={5}>Khuyến mãi</Title>
           <div>
             <Checkbox
               checked={filters.discount}
-              onChange={(e) => onChangeFilters(FilterTypes.DISCOUNT, e.target.checked)}
+              onChange={(e) => onChangeFilters(FilterEnums.DISCOUNT, e.target.checked)}
             >
               Đang giảm giá
             </Checkbox>
@@ -383,7 +412,7 @@ export default function Products({ brands, categories, material }: IProps) {
           <div>
             <Checkbox
               checked={filters.flashsale}
-              onChange={(e) => onChangeFilters(FilterTypes.FLASHSALE, e.target.checked)}
+              onChange={(e) => onChangeFilters(FilterEnums.FLASHSALE, e.target.checked)}
             >
               Flash sale
             </Checkbox>

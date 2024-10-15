@@ -23,6 +23,11 @@ const reducer = (state: AuthStateType, action: AuthActionType): AuthStateType =>
         isAuthenticated: false,
         userInfo: action.payload,
       }
+    case AuthActionEnums.CHANGEINFO:
+      return {
+        ...state,
+        userInfo: action.payload,
+      }
     default:
       return state
   }

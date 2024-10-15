@@ -119,21 +119,6 @@ export const getOrderStatus = (index: number) => OrderStatus[index] ?? OrderStat
 
 export const getPaymentDeadline = (date: string) => new Date(date).getTime() + 1000 * 60 * 15
 
-export const initProduct: ProductType = {
-  id: 0,
-  name: '',
-  description: '',
-  enable: false,
-  gender: 0,
-  sold: 0,
-  discountPercent: 0,
-  price: 0,
-  categoryName: '',
-  brandName: '',
-  imageUrl: '',
-  rating: 0,
-}
-
 export const maskEmail = (email: string): string => {
   const emailParts = email.split('@')
   if (emailParts.length !== 2) {
@@ -156,3 +141,12 @@ export const getBase64 = (file: any): Promise<string> =>
     reader.onload = () => resolve(reader.result as string)
     reader.onerror = (error) => reject(error)
   })
+
+export const formatCount = (num: number) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'm'
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'k'
+  }
+  return num.toString()
+}

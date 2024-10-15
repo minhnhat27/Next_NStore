@@ -19,7 +19,8 @@ import useAuth from '~/hooks/useAuth'
 import useFavorite from '~/hooks/useFavorites'
 import httpService from '~/lib/http-service'
 import { ACCOUNT_API } from '~/utils/api-urls'
-import { formatVND, initProduct, toNextImageLink } from '~/utils/common'
+import { formatVND, toNextImageLink } from '~/utils/common'
+import { initProduct } from '~/utils/initType'
 
 export default function Favorite() {
   const { state } = useAuth()
@@ -59,8 +60,8 @@ export default function Favorite() {
   }, [isLoading])
 
   useEffect(() => {
-    if (data?.items) {
-      const newData = list.concat(data?.items.filter((x) => !list.some((e) => e.id === x.id)))
+    if (data) {
+      const newData = list.concat(data.items.filter((x) => !list.some((e) => e.id === x.id)))
       setList(newData)
       setFavorites(newData)
     }
