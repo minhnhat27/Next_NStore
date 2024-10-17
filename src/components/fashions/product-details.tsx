@@ -282,11 +282,11 @@ export default function Details({ id }: IProps) {
                 </div>
                 <div className="md:px-4 md:col-span-2 flex flex-col gap-2 ">
                   <div className="text-2xl font-semibold line-clamp-2">{product.name}</div>
-                  <div className="space-x-2">
+                  <div className="flex items-center gap-2">
                     <Rate allowHalf disabled={true} value={product.rating} />
-                    <span>{product?.rating}</span>
+                    <div>{product?.rating}</div>
                     <Divider type="vertical" />
-                    <span>Đã bán {product?.sold}</span>
+                    <div>Đã bán {product?.sold}</div>
                     <Divider type="vertical" />
                     <Heart productId={product?.id} label />
                   </div>
@@ -322,12 +322,12 @@ export default function Details({ id }: IProps) {
                     </div>
                   </div>
                   <div
-                    className={`grid grid-cols-5 gap-4 px-6 py-2 ${
+                    className={`grid grid-cols-5 gap-4 md:px-6 py-2 ${
                       selectedError && 'bg-red-50 border border-red-400'
                     }`}
                   >
                     <div className="text-gray-500 text-base font-semibold">Màu</div>
-                    <div className="col-span-4 space-x-2">
+                    <div className="col-span-4 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                       {product?.colorSizes.map((color, i) => (
                         <Button
                           key={i}
@@ -344,7 +344,7 @@ export default function Details({ id }: IProps) {
                     </div>
 
                     <div className="text-gray-500 text-base font-semibold">Kích cỡ</div>
-                    <div className="col-span-4 space-x-2">
+                    <div className="col-span-4 grid grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2">
                       {product?.colorSizes[0]?.sizeInStocks?.map((size, i) => (
                         <Button
                           key={i}

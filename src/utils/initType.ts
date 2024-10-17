@@ -18,3 +18,13 @@ export const initProduct: ProductType = {
   rating: 0,
   ratingCount: 0,
 }
+
+export const initOrder: OrderType = {
+  id: 0,
+  amountPaid: 0,
+  orderDate: '',
+  shippingCost: 0,
+  total: 0,
+  paymentMethodName: '',
+  orderStatus: 0,
+}

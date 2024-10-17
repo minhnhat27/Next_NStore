@@ -1,12 +1,17 @@
 interface OrderType {
   id: number
   orderDate: string
+  shippingCost: number
   receivedDate?: string
   reviewed?: boolean
   total: number
   amountPaid: number
-  paymentMethod: string
-  orderStatus?: number
+  paymentMethodName: string
+  orderStatus: number
+
+  shippingCode?: string
+  expected_delivery_time?: string
+
   payBackUrl?: string
 }
 
@@ -27,7 +32,6 @@ interface ProductOrderDetails {
 }
 interface OrderDetailsType extends OrderType, DeliveryInfo {
   productOrderDetails: ProductOrderDetails[]
-  shippingCost: number
 }
 
 interface CreateOrderType extends DeliveryInfo {
@@ -36,6 +40,9 @@ interface CreateOrderType extends DeliveryInfo {
   code?: string
   cartIds: string[]
   paymentMethodId: number
+
+  districtID: number
+  wardID: string
 }
 
 interface PaymentMethod {

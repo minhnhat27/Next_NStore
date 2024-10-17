@@ -398,12 +398,12 @@ export default function CartDetails({ paymentMethods }: IProps) {
         ...address,
         name: values.fullname,
         detail: values.detail,
-        province_id: values.province.value,
-        province_name: values.province.label,
-        ward_id: values.ward.value,
-        ward_name: values.ward.label,
-        district_id: values.district.value,
-        district_name: values.district.label,
+        provinceID: values.province.value,
+        provinceName: values.province.label,
+        wardID: values.ward.value,
+        wardName: values.ward.label,
+        districtID: values.district.value,
+        districtName: values.district.label,
         phoneNumber: values.phoneNumber.toString(),
       }
 
@@ -424,16 +424,16 @@ export default function CartDetails({ paymentMethods }: IProps) {
         return
       }
 
-      const delivery = [
-        address?.detail,
-        address?.ward_name,
-        address?.district_name,
-        address?.province_name,
-      ].join(', ')
+      if (paymentMethodId && address.districtID && address.wardID) {
+        const delivery = [
+          address.detail,
+          address.wardName,
+          address.districtName,
+          address.provinceName,
+        ].join(', ')
 
-      const receiver = [address?.name, address?.phoneNumber].join(', ')
+        const receiver = [address.name, address.phoneNumber].join(', ')
 
-      if (paymentMethodId) {
         const order: CreateOrderType = {
           total: total.total(),
           shippingCost: total.shipping,
@@ -442,6 +442,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
           receiver: receiver,
           deliveryAddress: delivery,
           cartIds: checkedItems.map((item) => item.id),
+          wardID: address.wardID.toString(),
+          districtID: address.districtID,
         }
 
         const url = await createOrderTrigger(order)
@@ -449,6 +451,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
         mutate([`${CART_API}/count`, state.userInfo?.session])
 
         const paymentMethodName = paymentMethods.find((e) => e.id === paymentMethodId)?.name
+
         if (paymentMethodName && paymentMethodName.toUpperCase() != 'COD') {
           router.push(url)
         } else {

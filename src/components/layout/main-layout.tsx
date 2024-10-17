@@ -1,9 +1,9 @@
 'use client'
 
-import { Suspense, useEffect, useMemo } from 'react'
+import { Suspense, useEffect } from 'react'
 import Loading from '~/app/loading'
 
-import { App, ConfigProvider, Layout } from 'antd'
+import { App, ConfigProvider, FloatButton, Layout } from 'antd'
 import viVN from 'antd/locale/vi_VN'
 import useFavorite from '~/hooks/useFavorites'
 import useSWRImmutable from 'swr/immutable'
@@ -44,6 +44,7 @@ export default function MainLayout({ children, header, footer }: IProps) {
         </Suspense>
         {footer}
       </Layout>
+      <FloatButton.BackTop style={{ insetInlineEnd: 90 }} className="h-12 w-12" />
     </ConfigProvider>
   )
 }

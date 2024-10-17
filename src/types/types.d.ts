@@ -8,20 +8,20 @@ interface ReceiverType {
 }
 
 interface ProvinceType {
-  province_id?: number | string
-  province_name?: string
+  provinceID?: number
+  provinceName?: string
 }
 interface DistrictType {
-  district_id?: number | string
-  district_name?: string
+  districtID?: number
+  districtName?: string
 }
 interface WardType {
-  ward_id?: number | string
-  ward_name?: string
+  wardID?: number
+  wardName?: string
 }
 
 type ValueLabelType = {
-  value: number | string
+  value: number
   label: string
 }
 

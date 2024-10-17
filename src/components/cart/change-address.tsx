@@ -4,7 +4,7 @@ import { FaLocationDot } from 'react-icons/fa6'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
 import { PROVINCE_API } from '~/utils/api-urls'
-import { convertToVietnamPhoneNumber, removeVietnameseTones, searchAddress } from '~/utils/common'
+import { searchAddress } from '~/utils/common'
 
 interface IProps {
   address?: AddressType
@@ -48,30 +48,36 @@ export default function ChangeAddress({
 
   useEffect(() => {
     if (provinceData) {
-      const data: ValueLabelType[] = provinceData.results?.map((item: ProvinceType) => ({
-        value: item.province_id,
-        label: item.province_name,
-      }))
+      const data: ValueLabelType[] = provinceData.map(
+        (item: { ProvinceID: number; ProvinceName: string }) => ({
+          value: item.ProvinceID,
+          label: item.ProvinceName,
+        }),
+      )
       setProvince(data)
     }
   }, [provinceData])
 
   useEffect(() => {
     if (districtData) {
-      const data: ValueLabelType[] = districtData.results?.map((item: DistrictType) => ({
-        value: item.district_id,
-        label: item.district_name,
-      }))
+      const data: ValueLabelType[] = districtData.map(
+        (item: { DistrictID: number; DistrictName: string }) => ({
+          value: item.DistrictID,
+          label: item.DistrictName,
+        }),
+      )
       setDistrict(data)
     }
   }, [districtData])
 
   useEffect(() => {
     if (wardData) {
-      const data: ValueLabelType[] = wardData.results?.map((item: WardType) => ({
-        value: item.ward_id,
-        label: item.ward_name,
-      }))
+      const data: ValueLabelType[] = wardData.map(
+        (item: { WardCode: number; WardName: string }) => ({
+          value: item.WardCode,
+          label: item.WardName,
+        }),
+      )
       setWard(data)
     }
   }, [wardData])
@@ -103,17 +109,17 @@ export default function ChangeAddress({
             initialValues={{
               phoneNumber: address?.phoneNumber,
               fullname: address?.name,
-              province: address?.province_id && {
-                value: address.province_id,
-                label: address.province_name,
+              province: address?.provinceID && {
+                value: address.provinceID,
+                label: address.provinceName,
               },
-              district: address?.district_id && {
-                value: address?.district_id,
-                label: address?.district_name,
+              district: address?.districtID && {
+                value: address?.districtID,
+                label: address?.districtName,
               },
-              ward: address?.ward_id && {
-                value: address?.ward_id,
-                label: address?.ward_name,
+              ward: address?.wardID && {
+                value: address?.wardID,
+                label: address?.wardName,
               },
               detail: address?.detail,
             }}
@@ -236,11 +242,11 @@ export default function ChangeAddress({
         </div>
         {address &&
         address.detail &&
-        address.ward_name &&
-        address.district_name &&
-        address.province_name ? (
-          <div className={truncate ? 'truncate' : ''}>
-            {address.detail}, {address.ward_name}, {address.district_name}, {address.province_name}
+        address.wardName &&
+        address.districtName &&
+        address.provinceName ? (
+          <div className={truncate ? 'truncate' : 'line-clamp-2'}>
+            {address.detail}, {address.wardName}, {address.districtName}, {address.provinceName}
           </div>
         ) : (
           'Chưa chọn địa chỉ'

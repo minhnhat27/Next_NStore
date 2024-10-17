@@ -21,9 +21,11 @@ import { getBase64, showError } from '~/utils/common'
 
 interface IProps {
   id: number
+  children?: React.ReactNode
   order_details_load: boolean
   getDetail: (id: number) => void
   order_details?: OrderDetailsType
+  mutateReview: (id: number) => void
 }
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
@@ -37,7 +39,14 @@ type ReviewType = {
 
 type UploadType = { productId: number; files: UploadFile[] }
 
-const ReviewProduct = ({ id, order_details_load, order_details, getDetail }: IProps) => {
+const ReviewProduct = ({
+  id,
+  children,
+  order_details_load,
+  order_details,
+  getDetail,
+  mutateReview,
+}: IProps) => {
   const { notification } = App.useApp()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState<boolean>(false)
@@ -85,6 +94,7 @@ const ReviewProduct = ({ id, order_details_load, order_details, getDetail }: IPr
       setOpen(false)
       form.resetFields()
       setFileList([])
+      mutateReview(id)
     } catch (error) {
       notification.error({
         message: 'Thất bại',
@@ -248,8 +258,12 @@ const ReviewProduct = ({ id, order_details_load, order_details, getDetail }: IPr
           </Form.List>
         )}
       </Modal>
-      <Button type="link" onClick={openModel} className="px-0 rounded-sm text-yellow-500">
-        Đánh giá <Rate value={1} count={1} />
+      <Button type="link" onClick={openModel} className="px-0 rounded-sm text-yellow-600">
+        {children || (
+          <div className="flex items-center gap-2">
+            Đánh giá <Rate value={1} count={1} />
+          </div>
+        )}
       </Button>
     </>
   )

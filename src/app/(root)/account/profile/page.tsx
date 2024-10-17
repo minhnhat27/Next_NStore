@@ -12,7 +12,7 @@ import { showError } from '~/utils/common'
 
 export default function Profile() {
   const [form] = Form.useForm()
-  const { state, dispatch } = useAuth()
+  const { state } = useAuth()
   const { notification } = App.useApp()
   const session = state.userInfo?.session
 
@@ -52,7 +52,7 @@ export default function Profile() {
     try {
       setLoading(true)
       const result = await httpService.put(ACCOUNT_API + '/info', values)
-      
+
       info_mutate({ email: info?.email, ...result })
       // dispatch()
       notification.success({
@@ -77,12 +77,12 @@ export default function Profile() {
         ...address,
         name: values.fullname,
         detail: values.detail,
-        province_id: values.province.value,
-        province_name: values.province.label,
-        ward_id: values.ward.value,
-        ward_name: values.ward.label,
-        district_id: values.district.value,
-        district_name: values.district.label,
+        provinceID: values.province.value,
+        provinceName: values.province.label,
+        wardID: values.ward.value,
+        wardName: values.ward.label,
+        districtID: values.district.value,
+        districtName: values.district.label,
         phoneNumber: values.phoneNumber.toString(),
       }
 

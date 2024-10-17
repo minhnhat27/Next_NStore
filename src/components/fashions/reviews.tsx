@@ -50,7 +50,7 @@ export default function Reviews({ id, description }: IProps) {
     setReviews(
       list.concat([...new Array(3)].map(() => ({ id: '', star: 5, username: '', imagesUrls: [] }))),
     )
-    setParams((pre) => ({ ...pre, page: pre.page++ }))
+    setParams((pre) => ({ ...pre, page: pre.page + 1 }))
   }
 
   const loadMore =
@@ -127,11 +127,11 @@ export default function Reviews({ id, description }: IProps) {
                     width={0}
                     height={0}
                     quality={100}
-                    sizes="10vw"
+                    sizes="100vw"
                     src={toNextImageLink(url)}
                     onClick={() => onViewImage(url)}
                     alt="review"
-                    className="w-auto h-auto cursor-pointer"
+                    className="w-32 h-32 object-cover cursor-pointer"
                   />
                 ))}
               </div>
