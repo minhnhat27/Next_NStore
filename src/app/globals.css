@@ -32,3 +32,7 @@ pre {
   font-family: inherit;
   font-size: inherit;
 }
+
+.leaflet-routing-container {
+  display: none;
+}

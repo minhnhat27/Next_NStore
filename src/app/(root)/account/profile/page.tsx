@@ -1,6 +1,7 @@
 'use client'
 
-import { App, Button, Form, FormProps, Input, Skeleton } from 'antd'
+import { App, Button, Divider, Form, FormProps, Input, Skeleton, Switch } from 'antd'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
 import ChangeEmail from '~/components/account/change-email'
@@ -97,11 +98,12 @@ export default function Profile() {
   return (
     <>
       <div className="flex justify-center">
-        <div className="grid grid-cols-2 gap-4 w-full md:w-11/12 lg:w-3/4">
+        <div className="flex flex-col-reverse md:flex-row gap-4 w-full p-2 md:w-11/12 lg:w-3/4">
           {info_loading ? (
             <Skeleton active paragraph={{ rows: 8 }} />
           ) : (
             <Form
+              className="md:w-1/2"
               disabled={loading}
               layout="vertical"
               form={form}
@@ -127,7 +129,6 @@ export default function Profile() {
               >
                 <Input size="large" placeholder="Số điện thoại" />
               </Form.Item>
-
               <Button
                 htmlType="submit"
                 disabled={loading || disabled}
@@ -138,18 +139,41 @@ export default function Profile() {
               </Button>
             </Form>
           )}
-
           <>
             {address_loading ? (
               <Skeleton active />
             ) : (
-              <div className="">
-                <div>Địa chỉ giao hàng</div>
-                <ChangeAddress
-                  className="mt-2"
-                  address={address}
-                  handleConfirmAddress={handleConfirmAddress}
-                />
+              <div className="md:w-1/2">
+                <div className="pb-2">Địa chỉ giao hàng</div>
+                <ChangeAddress address={address} handleConfirmAddress={handleConfirmAddress} />
+                <Divider />
+                <div className="py-2">Tài khoản liên kết</div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Switch />
+                    <Image
+                      width={0}
+                      height={0}
+                      sizes="10vw"
+                      className="h-6 w-auto"
+                      src="/images/Google_Logo.png"
+                      alt="google-logo"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch />
+                    <Image
+                      width={0}
+                      height={0}
+                      sizes="10vw"
+                      className="h-6 w-auto"
+                      src="/images/Facebook_Logo.png"
+                      alt="facebook-logo"
+                    />
+                  </div>
+                </div>
+
+                <Divider className="md:hidden mb-2" />
               </div>
             )}
           </>

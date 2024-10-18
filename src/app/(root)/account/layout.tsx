@@ -26,7 +26,7 @@ export default async function Profile({ children }: { children: React.ReactNode 
       <Layout className="bg-white">
         <SiderMenu />
         <Layout className="bg-white">
-          <div className="bg-gray-100 min-h-[calc(100vh-10rem)] h-fit p-4">{children}</div>
+          <div className="bg-gray-100 min-h-[calc(100vh-10rem)] h-fit p-2">{children}</div>
         </Layout>
       </Layout>
     </div>

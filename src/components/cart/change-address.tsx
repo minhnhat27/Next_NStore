@@ -217,8 +217,8 @@ export default function ChangeAddress({
         </Form.Item>
       </Modal>
       <div className={className}>
-        <div className="grid grid-cols-3 gap-1">
-          <div className="col-span-2 flex items-center gap-1">
+        <div className="grid grid-cols-4 gap-2">
+          <div className="col-span-3 flex items-center gap-1">
             <FaLocationDot className="text-xl text-red-600" />
             <div className="font-bold inline-block truncate">
               {address?.name || address?.phoneNumber ? (
