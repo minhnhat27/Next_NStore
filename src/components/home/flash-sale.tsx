@@ -1,3 +1,5 @@
+'use client'
+
 import { Image, Carousel } from 'antd'
 import React from 'react'
 

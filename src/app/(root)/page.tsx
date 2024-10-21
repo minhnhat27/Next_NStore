@@ -77,9 +77,7 @@ export default async function Home() {
           </Divider>
           <BestSeller />
         </>
-
         <PopularBrands />
-
         <>
           <Divider>
             <div className="text-center pb-6 font-semibold text-xl md:text-3xl text-blue-950 font-sans">

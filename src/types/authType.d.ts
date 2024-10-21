@@ -22,6 +22,7 @@ type VerifyOTPType = {
 type UserInfoType = {
   fullname?: string
   session: string
+  provider?: number
 }
 
 type AuthContextType = {
@@ -49,6 +50,8 @@ type AuthStateType = {
 
 type LoginResType = {
   accessToken: string
-  refreshToken: string
+  // refreshToken: string
   fullName?: string
+  expires: string
+  session: string
 }

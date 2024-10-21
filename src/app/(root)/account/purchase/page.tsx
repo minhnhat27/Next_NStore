@@ -1,8 +1,8 @@
 'use client'
 
-import { Button, Divider, Drawer, List, Modal, Popconfirm, Skeleton, Statistic, Tag } from 'antd'
+import { Button, Divider, Drawer, List, Popconfirm, Skeleton, Statistic, Tag } from 'antd'
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FaLocationDot } from 'react-icons/fa6'
 import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
@@ -21,7 +21,6 @@ import {
 } from '~/utils/common'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import TrackingOrder from '~/components/account/tracking-order'
-
 const { Countdown } = Statistic
 
 const Processing_Status = OrderStatus['Đang xử lý']

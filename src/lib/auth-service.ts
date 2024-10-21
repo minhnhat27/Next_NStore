@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 export async function logout() {
   cookies().delete('NStore_TOKEN')
-  cookies().delete('NStore_RTOKEN')
+  // cookies().delete('NStore_RTOKEN')
   cookies().delete('NStore_USER')
 }
 
@@ -18,6 +18,7 @@ export async function hasAuthSession() {
 }
 
 export async function authHeader() {
+  
   const token = cookies().get('NStore_TOKEN')?.value
   return token ? { Authorization: 'Bearer ' + token } : {}
 }

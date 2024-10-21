@@ -3,7 +3,7 @@ import { NextError } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL
 
-export const revalidate = 7200
+export const revalidate = false
 
 export async function GET(req: NextRequest) {
   try {

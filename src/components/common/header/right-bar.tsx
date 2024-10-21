@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge, Dropdown, Flex, Input, MenuProps } from 'antd'
+import { Badge, Dropdown, Flex, MenuProps } from 'antd'
 import { FaShoppingBag, FaUser } from 'react-icons/fa'
 import useAuth from '~/hooks/useAuth'
 import Link from 'next/link'

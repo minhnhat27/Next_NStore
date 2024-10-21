@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from 'react'
 import Loading from '~/app/loading'
 
-import { App, ConfigProvider, FloatButton, Layout } from 'antd'
+import { ConfigProvider, FloatButton, Layout } from 'antd'
 import viVN from 'antd/locale/vi_VN'
 import useFavorite from '~/hooks/useFavorites'
 import useSWRImmutable from 'swr/immutable'

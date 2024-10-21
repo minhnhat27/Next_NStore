@@ -13,13 +13,13 @@ interface IProps {
 export const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined)
 
 export default function FavoriteProvider({ children }: IProps) {
-  const { redirectIfNoAuthenticated } = useAuth()
+  // const { redirectIfNoAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<number[]>([])
 
   const setFavorite = (fav: number[]) => setFavorites(fav)
 
   const addFavorite = async (productId: number): Promise<void> => {
-    redirectIfNoAuthenticated()
+    // redirectIfNoAuthenticated()
 
     const data = { id: productId }
     await httpService.post(ACCOUNT_API + '/favorite', data)
@@ -27,7 +27,7 @@ export default function FavoriteProvider({ children }: IProps) {
   }
 
   const removeFavorite = async (productId: number): Promise<void> => {
-    redirectIfNoAuthenticated()
+    // redirectIfNoAuthenticated()
 
     await httpService.del(ACCOUNT_API + `/favorite/${productId}`)
     setFavorites((pre) => pre.filter((id) => id !== productId))

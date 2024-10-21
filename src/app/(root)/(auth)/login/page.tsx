@@ -1,21 +1,25 @@
 'use client'
 
-import { Button, Divider, Flex, Form, FormProps, Image, Input, Typography } from 'antd'
+import { App, Button, Divider, Form, FormProps, Input, Typography } from 'antd'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import useAuth from '~/hooks/useAuth'
-import AuthService from '~/lib/proxy-server-service/auth-service'
 
 import { showError } from '~/utils/common'
 import { AuthActions } from '~/utils/auth-actions'
+import httpService from '~/lib/http-service'
+import { AUTH_API } from '~/utils/api-urls'
+import LoginGoogle from '~/components/external-login/google'
+import LoginFacebook from '~/components/external-login/facebook'
 
 const { Title } = Typography
 
 export default function Login() {
   const { dispatch } = useAuth()
   const router = useRouter()
+  const { notification } = App.useApp()
 
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect')
@@ -23,14 +27,28 @@ export default function Login() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
 
+  const onSuccessLogin = (data: UserInfoType) => {
+    dispatch(AuthActions.LOGIN(data))
+    notification.info({
+      message: 'Đăng nhập thành công',
+      className: 'text-green-500',
+    })
+    const redirectTo = redirect || '/'
+    router.replace(redirectTo)
+  }
+
+  const startLoading = () => {
+    setLoading(true)
+  }
+  const stopLoading = () => {
+    setLoading(false)
+  }
+
   const handleSubmitLogin: FormProps<LoginType>['onFinish'] = async (values: LoginType) => {
     try {
-      setLoading(true)
-      const res = await AuthService.login(values)
-      dispatch(AuthActions.LOGIN(res.data))
-
-      const redirectTo = redirect || '/'
-      router.replace(redirectTo)
+      startLoading()
+      const data: UserInfoType = await httpService.post(AUTH_API + '/login', values)
+      onSuccessLogin(data)
     } catch (error: any) {
       form.setFields([
         {
@@ -39,15 +57,15 @@ export default function Login() {
         },
       ])
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
 
   return (
     <>
-      <Flex className="h-16">
+      <div className="flex h-16">
         <Title level={3}>Đăng nhập</Title>
-      </Flex>
+      </div>
       <Form form={form} disabled={loading} onFinish={handleSubmitLogin}>
         <Form.Item<LoginType>
           name="username"
@@ -70,13 +88,13 @@ export default function Login() {
           />
         </Form.Item>
         <Form.Item>
-          <Flex justify="space-between" align="center" className="text-xs md:text-sm">
+          <div className="flex justify-between items-center text-xs md:text-sm">
             <Link href="/forget-password">Quên mật khẩu</Link>
             <span>
               Chưa có tài khoản?
               <Link href="/register"> Đăng ký ngay</Link>
             </span>
-          </Flex>
+          </div>
         </Form.Item>
         <Form.Item>
           <Button
@@ -93,10 +111,20 @@ export default function Login() {
       <Divider className="my-4" plain>
         Hoặc tiếp tục với
       </Divider>
-      <Flex justify="center" align="center" className="space-x-2">
-        <Image alt="logo" src="/images/Facebook_Logo.png" width={35} preview={false} />
-        <Image alt="logo" src="/images/Google_Logo.png" width={35} preview={false} />
-      </Flex>
+      <div className="flex justify-center gap-4">
+        <LoginFacebook
+          disabled={loading}
+          startLoading={startLoading}
+          stopLoading={stopLoading}
+          onSuccessLogin={onSuccessLogin}
+        />
+        <LoginGoogle
+          disabled={loading}
+          startLoading={startLoading}
+          stopLoading={stopLoading}
+          onSuccessLogin={onSuccessLogin}
+        />
+      </div>
     </>
   )
 }

@@ -32,6 +32,7 @@ export enum OrderStatusTag {
   'green',
   'red',
 }
+
 export enum OrderStatusTagColor {
   '#eab308',
   '#3b82f6',
@@ -46,4 +47,9 @@ export enum Gender {
   'Nam',
   'Nữ',
   'Unisex',
+}
+
+export enum LoginProvider {
+  GOOGLE,
+  FACEBOOK,
 }

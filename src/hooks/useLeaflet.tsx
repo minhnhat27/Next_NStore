@@ -1,3 +1,5 @@
+'use client'
+
 import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 
@@ -35,5 +37,6 @@ export default function useLeaflet() {
 
     loadLeaflet()
   }, [])
+
   return { L, MapContainer, TileLayer, Marker, Popup }
 }

@@ -8,13 +8,12 @@ const API_URL = process.env.API_URL + '/api/auth'
 
 export async function POST(req: NextRequest) {
   try {
-    const dataReq: LoginType = await req.json()
-    const res = await axios.post(API_URL + '/login', dataReq)
+    const dataReq = await req.json()
+    const res = await axios.post(API_URL + '/login/facebook', dataReq)
 
     const data: LoginResType = res.data
     const { accessToken, expires, ...userData } = data
-    const t_expires = new Date(expires) //toDateTimeZone7(expires)
-
+    const t_expires = new Date(expires)
     cookies().set('NStore_TOKEN', accessToken, { httpOnly: true, expires: t_expires })
     cookies().set('NStore_USER', JSON.stringify(userData), { expires: t_expires })
 

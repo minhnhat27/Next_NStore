@@ -7,9 +7,9 @@ import { AntdRegistry } from '@ant-design/nextjs-registry'
 
 import dynamic from 'next/dynamic'
 import { App } from 'antd'
-import Loading from './loading'
 import FavoriteProvider from '~/components/common/favorite-provider'
 import ChatBox from '~/components/chat/chat-box'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const inter = Inter({ subsets: ['vietnamese'] })
 
@@ -23,6 +23,8 @@ export const metadata: Metadata = {
 const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-provider'), {
   ssr: false,
 })
+
+const Google_Client_ID = process.env.GOOGLE_CLIENT_ID
 
 export default async function RootLayout({
   children,
@@ -40,19 +42,29 @@ export default async function RootLayout({
 
   return (
     <html lang="vi">
+      <head>
+        <script
+          async
+          defer
+          crossOrigin="anonymous"
+          src="https://connect.facebook.net/en_US/sdk.js"
+        ></script>
+      </head>
       <body className={inter.className}>
-        <AuthProvider initialState={initialState}>
-          <FavoriteProvider>
-            <AntdRegistry>
-              <AntdStyleProvider>
-                <App>
-                  {children}
-                  <ChatBox />
-                </App>
-              </AntdStyleProvider>
-            </AntdRegistry>
-          </FavoriteProvider>
-        </AuthProvider>
+        <GoogleOAuthProvider clientId={Google_Client_ID ?? ''}>
+          <AuthProvider initialState={initialState}>
+            <FavoriteProvider>
+              <AntdRegistry>
+                <AntdStyleProvider>
+                  <App>
+                    {children}
+                    <ChatBox />
+                  </App>
+                </AntdStyleProvider>
+              </AntdRegistry>
+            </FavoriteProvider>
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   )

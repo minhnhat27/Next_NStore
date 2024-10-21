@@ -322,6 +322,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
             <CardProduct products={data?.items} />
           </div>
           <Pagination
+            hideOnSinglePage
             align="center"
             className="py-4"
             current={currentPage}

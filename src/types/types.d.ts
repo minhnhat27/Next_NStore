@@ -40,3 +40,8 @@ interface PaginationType {
   pageSize: number
   key?: string
 }
+
+interface IProps {
+  className?: string
+  children?: React.ReactNode
+}

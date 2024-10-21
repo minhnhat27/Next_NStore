@@ -2,12 +2,13 @@
 
 import { App, Button, Divider, Flex, Form, Image, Input, Typography } from 'antd'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { LockOutlined, UserOutlined, MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
-import AuthService from '~/lib/proxy-server-service/auth-service'
 import { showError } from '~/utils/common'
 import useCountdown from '~/hooks/useCountdown'
+import httpService from '~/lib/http-service'
+import { AUTH_API } from '~/utils/api-urls'
 
 const { Title } = Typography
 
@@ -47,7 +48,7 @@ const Register: React.FC = () => {
       const data: SendOTPType = {
         email: em,
       }
-      await AuthService.sendOTP(data)
+      await httpService.post(AUTH_API + '/send-otp', data)
       setEmail(em)
       nextFormState()
     } catch (error: any) {
@@ -66,7 +67,7 @@ const Register: React.FC = () => {
         email: form.getFieldValue('email'),
         token: OTP,
       }
-      await AuthService.verifyOTP(data)
+      await httpService.post(AUTH_API + '/verify-otp', data)
       nextFormState()
     } catch (error: any) {
       form.setFields([
@@ -85,7 +86,7 @@ const Register: React.FC = () => {
         token: OTP,
         email: email,
       }
-      await AuthService.register(data)
+      await httpService.post(AUTH_API + '/register', data)
 
       notification.success({
         className: 'text-green-500',
@@ -128,7 +129,8 @@ const Register: React.FC = () => {
     const data: SendOTPType = {
       email: form.getFieldValue('email'),
     }
-    await AuthService.sendOTP(data)
+
+    await httpService.post(AUTH_API + '/send-otp', data)
     setLoading(false)
     setCountdown(60)
   }

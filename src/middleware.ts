@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hasAuthSession } from './lib/auth-service'
 
-//export const runtime = 'edge'
-
 const authRoutes = ['/login', '/register', '/forget-password']
-const protectedRoutes = ['/profile', '/cart']
+const protectedRoutes = ['/account', '/cart']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -23,11 +21,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.nextUrl))
   }
 
-  const res = NextResponse.next()
+  // const res = NextResponse.next()
 
   // if (res.status === 401) return NextResponse.redirect(new URL('/login', req.url))
 
-  return res
+  return NextResponse.next()
 }
 
 export const config = {
