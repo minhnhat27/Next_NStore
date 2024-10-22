@@ -9,8 +9,12 @@ interface OrderType {
   paymentMethodName: string
   orderStatus: number
 
+  voucherDiscount: number
+
   shippingCode?: string
   expected_delivery_time?: string
+
+  productOrderDetail: ProductOrderDetail
 
   payBackUrl?: string
 }
@@ -20,7 +24,7 @@ interface DeliveryInfo {
   deliveryAddress: string
 }
 
-interface ProductOrderDetails {
+interface ProductOrderDetail {
   productId?: number
   productName: string
   sizeName: string
@@ -31,7 +35,7 @@ interface ProductOrderDetails {
   imageUrl?: string
 }
 interface OrderDetailsType extends OrderType, DeliveryInfo {
-  productOrderDetails: ProductOrderDetails[]
+  productOrderDetails: ProductOrderDetail[]
 }
 
 interface CreateOrderType extends DeliveryInfo {

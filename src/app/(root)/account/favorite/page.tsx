@@ -1,15 +1,7 @@
 'use client'
 
-import {
-  List,
-  Image as AntdImage,
-  Button,
-  Skeleton,
-  Popconfirm,
-  ConfigProvider,
-  Empty,
-  Typography,
-} from 'antd'
+import { CloseOutlined, ShoppingCartOutlined } from '@ant-design/icons'
+import { List, Button, Skeleton, ConfigProvider, Empty, Typography, Tooltip, Rate } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -18,6 +10,7 @@ import useSWRImmutable from 'swr/immutable'
 import useAuth from '~/hooks/useAuth'
 import useFavorite from '~/hooks/useFavorites'
 import httpService from '~/lib/http-service'
+import { Gender } from '~/types/enum'
 import { ACCOUNT_API } from '~/utils/api-urls'
 import { formatVND, toNextImageLink } from '~/utils/common'
 import { initProduct } from '~/utils/initType'
@@ -29,22 +22,9 @@ export default function Favorite() {
 
   const [loading, setLoading] = useState<boolean>(true)
 
-  const [currentImage, setCurrentImage] = useState<string>()
-  const [visible, setVisible] = useState<boolean>(false)
-
   const [page, setPage] = useState<number>(1)
 
   const pageSize = 2
-
-  // const [pageSize, setPageSize] = useState(() => {
-  //   const p = searchParams.get('currentSize')
-  //   return p ? parseInt(p) : pS
-  // })
-
-  // const [currentSize] = useState<number>(() => {
-  //   const p = searchParams.get('currentSize')
-  //   return p ? parseInt(p) : pS
-  // })
 
   const [list, setList] = useState<ProductType[]>([])
   const [favorites, setFavorites] = useState<ProductType[]>([])
@@ -74,8 +54,10 @@ export default function Favorite() {
 
   const loadMore =
     !isLoading && data && data.totalItems > favorites.length ? (
-      <div className="py-4 flex justify-center">
-        <Button onClick={onLoadMore}>Xem thêm</Button>
+      <div className="pt-6 flex justify-center">
+        <Button type="primary" className="rounded-sm" danger onClick={onLoadMore}>
+          Xem thêm
+        </Button>
       </div>
     ) : null
 
@@ -107,70 +89,76 @@ export default function Favorite() {
           itemLayout="horizontal"
           loadMore={loadMore}
           dataSource={favorites}
+          className="md:px-4"
           renderItem={(item) => (
-            <List.Item
-              extra={
-                <Popconfirm
-                  title="Xóa khỏi yêu thích?"
-                  onConfirm={() => handleRemoveFavorite(item.id)}
-                >
-                  <Button type="link">Xóa</Button>
-                </Popconfirm>
-              }
-            >
+            <List.Item className="relative">
               <Skeleton avatar title={false} loading={!item?.id} active>
                 <List.Item.Meta
                   avatar={
-                    <div
-                      onClick={() => {
-                        setVisible(true)
-                        setCurrentImage(item.imageUrl)
-                      }}
-                      className="h-20 w-16 flex cursor-pointer"
-                    >
-                      <Image
-                        height={0}
-                        width={0}
-                        sizes="20vw"
-                        quality={50}
-                        className="h-auto w-auto object-cover"
-                        src={toNextImageLink(item.imageUrl)}
-                        alt="Ảnh sản phẩm"
-                      />
-                    </div>
-                  }
-                  title={
-                    <Link href={{ pathname: `/fashions/${item.id}`, query: { name: item.name } }}>
-                      {item.name}
-                    </Link>
+                    <Image
+                      height={0}
+                      width={0}
+                      sizes="20vw"
+                      quality={50}
+                      className="h-24 md:h-32 w-20 md:w-28 object-cover"
+                      src={toNextImageLink(item.imageUrl)}
+                      alt="Ảnh sản phẩm"
+                    />
                   }
                   description={
-                    <div className="inline-flex gap-1">
-                      <div className="text-red-500 text-lg font-semibold">
-                        {formatVND.format(item.price - item.price * (item.discountPercent / 100.0))}
+                    <div className="flex flex-col md:flex-row justify-between gap-2">
+                      <div>
+                        <div className="text-xs">Thời trang {Gender[item.gender]}</div>
+                        <Link
+                          href={{ pathname: `/fashions/${item.id}`, query: { name: item.name } }}
+                        >
+                          <div className="text-black text-sm md:text-base font-semibold py-1 line-clamp-2">
+                            {item.name}
+                          </div>
+                        </Link>
+                        <div className="text-xs md:text-sm">{item.sold} lượt bán</div>
+                        <div className="text-xs md:text-sm">
+                          <Rate disabled value={1} count={1} />
+                          {item.ratingCount > 0 ? (
+                            <>
+                              <span className="text-red-500">{item.rating}</span> (
+                              {item.ratingCount} lượt đánh giá)
+                            </>
+                          ) : (
+                            '(Chưa có đánh giá)'
+                          )}
+                        </div>
                       </div>
-                      {!item.discountPercent || (
-                        <div className="line-through">{formatVND.format(item.price)}</div>
-                      )}
+
+                      <div className="md:mr-8 md:self-center flex flex-row-reverse justify-end md:flex-col gap-1">
+                        {!item.discountPercent || (
+                          <div className="line-through text-gray-500 text-xs">
+                            {formatVND.format(item.price)}
+                          </div>
+                        )}
+                        <div className="text-red-500 text-lg font-semibold">
+                          {formatVND.format(
+                            item.price - item.price * (item.discountPercent / 100.0),
+                          )}
+                        </div>
+                      </div>
                     </div>
                   }
                 />
+                <Tooltip title="Xóa khỏi yêu thích">
+                  <Button
+                    onClick={() => handleRemoveFavorite(item.id)}
+                    className="absolute p-2 top-1 right-0"
+                    type="text"
+                  >
+                    <CloseOutlined />
+                  </Button>
+                </Tooltip>
               </Skeleton>
             </List.Item>
           )}
         />
       </ConfigProvider>
-      {currentImage && (
-        <AntdImage
-          width={0}
-          hidden
-          preview={{
-            visible,
-            src: toNextImageLink(currentImage),
-            onVisibleChange: (value) => setVisible(value),
-          }}
-        />
-      )}
     </>
   )
 }

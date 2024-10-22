@@ -1,6 +1,16 @@
 'use client'
 
-import { Button, Divider, Drawer, List, Popconfirm, Skeleton, Statistic, Tag } from 'antd'
+import {
+  Button,
+  Divider,
+  Drawer,
+  List,
+  Popconfirm,
+  Skeleton,
+  Statistic,
+  Tag,
+  Image as AntdImage,
+} from 'antd'
 import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FaLocationDot } from 'react-icons/fa6'
@@ -118,8 +128,9 @@ export default function Purchase() {
                 key={order.id}
               >
                 <List.Item.Meta
+                  className="mb-0"
                   title={
-                    <div className="text-xs md:text-sm flex flex-col gap-4">
+                    <div className="text-xs md:text-sm flex flex-col gap-2">
                       <div className="flex justify-between items-center gap-4">
                         <div>
                           <span className="text-2xl font-semibold">#{order.id}</span>
@@ -143,20 +154,16 @@ export default function Purchase() {
                         )}
                         {order.orderStatus !== Cancel_Status && order.shippingCode && (
                           <div className="text-end">
-                            <div>
-                              {' '}
-                              Mã vận đơn:{' '}
-                              <span className="font-bold text-emerald-600">
-                                {order.shippingCode}
-                              </span>{' '}
-                              (GHN)
-                            </div>
+                            Mã vận đơn:{' '}
+                            <span className="font-bold text-emerald-700">
+                              {order.shippingCode}{' '}
+                            </span>
                             <Button
                               onClick={() => onClickTrackOrder(order.shippingCode)}
                               type="link"
                               className="px-0"
                             >
-                              Tra cứu
+                              (Tra cứu)
                             </Button>
                           </div>
                         )}
@@ -178,6 +185,24 @@ export default function Purchase() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>Đã thanh toán</div>
                     <div>{formatVND.format(order.amountPaid)}</div>
+                  </div>
+                  <Divider className="my-2" />
+                  <div className="flex gap-2">
+                    <Image
+                      height={0}
+                      width={0}
+                      sizes="20vw"
+                      alt="sản phẩm"
+                      src={toNextImageLink(order.productOrderDetail.imageUrl)}
+                      className="h-20 w-14 object-contain"
+                    />
+                    <div>
+                      <div className="line-clamp-3">{order.productOrderDetail.productName}</div>
+                      <div>
+                        {order.productOrderDetail.quantity} x{' '}
+                        {formatVND.format(order.productOrderDetail.originPrice)}
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-2 text-end gap-2">
                     {order.amountPaid < order.total &&
@@ -218,7 +243,7 @@ export default function Purchase() {
                       )
                     )}
                     <Button className="m-1" onClick={() => onOpenDetail(order.id)}>
-                      Chi tiết
+                      Xem chi tiết
                     </Button>
                     {order.orderStatus === Processing_Status && (
                       <Popconfirm
@@ -248,14 +273,16 @@ export default function Purchase() {
         open={openDrawer}
         closable
         destroyOnClose
+        styles={{ body: { padding: '1rem 1.5rem' } }}
         loading={order_details_load}
         onClose={() => setOpenDrawer(false)} // setOrderId(undefined)
         title={`Chi tiết đơn hàng #${orderId}`}
         footer={
           order_details && (
             <>
-              <div className="py-1">Ngày đặt hàng: {formatDateTime(order_details.orderDate)}</div>
+              {/* <div className="py-1">Ngày đặt hàng: {formatDateTime(order_details.orderDate)}</div> */}
               <div>Phí vận chuyển: {formatVND.format(order_details.shippingCost)}</div>
+              <div>Giảm giá: {formatVND.format(order_details.voucherDiscount)}</div>
               <div>
                 Tổng cộng:{' '}
                 <span className="text-lg font-semibold">
@@ -273,30 +300,28 @@ export default function Purchase() {
               <div className="font-bold inline-block truncate">{order_details.receiver}</div>
             </div>
             <div>{order_details.deliveryAddress}</div>
-            <Divider />
+            <Divider className="my-2" />
 
             <List
               itemLayout="vertical"
               size="large"
               dataSource={order_details.productOrderDetails}
               renderItem={(item) => (
-                <List.Item className="p-0" key={item.productId}>
+                <List.Item className="p-0 my-2" key={item.productId}>
                   <List.Item.Meta
+                    className="mb-0"
                     avatar={
-                      <Image
-                        width={0}
-                        height={0}
-                        sizes="100vw"
+                      <AntdImage
                         alt={item.productName}
-                        className="h-20 w-20"
+                        className="h-28 w-20 object-cover"
                         src={toNextImageLink(item.imageUrl)}
                       />
                     }
-                    title={<div className="truncate">{item.productName}</div>}
+                    title={<div className="line-clamp-2">{item.productName}</div>}
                     description={
                       <>
                         <div>
-                          {item.quantity} x {formatVND.format(item.price)}
+                          {item.quantity} x {formatVND.format(item.originPrice)}
                         </div>
                         <div className="text-gray-500 font-semibold">
                           Phân loại: {item.colorName} - {item.sizeName}

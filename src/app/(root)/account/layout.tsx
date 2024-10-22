@@ -23,10 +23,10 @@ export default async function Profile({ children }: { children: React.ReactNode 
   return (
     <div className="p-4 space-y-4">
       <BreadcrumbLink items={breadcrumbItems} />
-      <Layout className="bg-white">
+      <Layout className="bg-white space-x-4">
         <SiderMenu />
-        <Layout className="bg-white">
-          <div className="bg-gray-100 min-h-[calc(100vh-10rem)] h-fit p-2">{children}</div>
+        <Layout className="bg-white border rounded-lg drop-shadow min-h-[calc(100vh-10rem)] h-fit p-2">
+          {children}
         </Layout>
       </Layout>
     </div>

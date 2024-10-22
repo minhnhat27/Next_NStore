@@ -46,7 +46,12 @@ export default function SiderMenu() {
         breakpoint="md"
         theme="light"
       >
-        <Menu selectedKeys={[pathname]} mode="inline" items={items} />
+        <Menu
+          className="rounded-lg drop-shadow"
+          selectedKeys={[pathname]}
+          mode="inline"
+          items={items}
+        />
       </Sider>
     </>
   )
