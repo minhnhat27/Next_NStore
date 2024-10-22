@@ -8,6 +8,8 @@ interface InfoType {
   fullname?: string
   phoneNumber?: string
   email?: string
+
+  facebook?: boolean
 }
 
 type ChangePasswordType = {

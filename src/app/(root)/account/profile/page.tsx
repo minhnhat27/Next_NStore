@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
 import ChangeEmail from '~/components/account/change-email'
+import ExternalLoginLink from '~/components/account/external-login-link'
 import ChangeAddress from '~/components/cart/change-address'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
@@ -25,7 +26,7 @@ export default function Profile() {
   const {
     data: info,
     isLoading: info_loading,
-    mutate: info_mutate,
+    mutate,
   } = useSWRImmutable<InfoType>([ACCOUNT_API + '/info', session], ([url, session]) =>
     httpService.getWithSession(url, session),
   )
@@ -33,7 +34,7 @@ export default function Profile() {
   const {
     data: address,
     isLoading: address_loading,
-    mutate: address_mutate,
+    mutate: mutate_address,
   } = useSWRImmutable<AddressType>([ACCOUNT_API + '/address', session], ([url, session]) =>
     httpService.getWithSession(url, session),
   )
@@ -54,7 +55,7 @@ export default function Profile() {
       setLoading(true)
       const result = await httpService.put(ACCOUNT_API + '/info', values)
 
-      info_mutate({ email: info?.email, ...result })
+      mutate_info({ email: info?.email, ...result })
       // dispatch()
       notification.success({
         message: 'Thành công',
@@ -88,12 +89,14 @@ export default function Profile() {
       }
 
       const result = await httpService.put(ACCOUNT_API + '/address', userAddress)
-      address_mutate(result)
+      mutate_address(result)
       return true
     } catch (error) {
       return false
     }
   }
+
+  const mutate_info = (info: InfoType) => mutate(info)
 
   return (
     <>
@@ -114,7 +117,7 @@ export default function Profile() {
               }}
               onFinish={handleChangeInfo}
             >
-              <ChangeEmail info={info} info_mutate={info_mutate} />
+              <ChangeEmail info={info} mutate_info={mutate_info} />
               <Form.Item<InfoType>
                 label="Họ và tên"
                 name="fullname"
@@ -147,32 +150,11 @@ export default function Profile() {
                 <div className="pb-2">Địa chỉ giao hàng</div>
                 <ChangeAddress address={address} handleConfirmAddress={handleConfirmAddress} />
                 <Divider />
-                <div className="py-2">Tài khoản liên kết</div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Switch />
-                    <Image
-                      width={0}
-                      height={0}
-                      sizes="10vw"
-                      className="h-6 w-auto"
-                      src="/images/Google_Logo.png"
-                      alt="google-logo"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch />
-                    <Image
-                      width={0}
-                      height={0}
-                      sizes="10vw"
-                      className="h-6 w-auto"
-                      src="/images/Facebook_Logo.png"
-                      alt="facebook-logo"
-                    />
-                  </div>
-                </div>
-
+                <ExternalLoginLink
+                  facebook={info?.facebook}
+                  info={info}
+                  mutate_info={mutate_info}
+                />
                 <Divider className="md:hidden mb-2" />
               </div>
             )}

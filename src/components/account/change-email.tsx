@@ -8,11 +8,6 @@ import { AuthTypeEnum } from '~/types/enum'
 import { AUTH_API } from '~/utils/api-urls'
 import { maskEmail, showError } from '~/utils/common'
 
-interface IProps {
-  info?: InfoType
-  info_mutate: KeyedMutator<InfoType>
-}
-
 enum ChangeEmailState {
   CHECK_PASSWORD,
   NEW_EMAIL,
@@ -25,7 +20,12 @@ type ChangeEmailType = {
   token: string
 }
 
-export default function ChangeEmail({ info, info_mutate }: IProps) {
+interface Props {
+  info?: InfoType
+  mutate_info: (info: InfoType) => void
+}
+
+export default function ChangeEmail({ info, mutate_info }: Props) {
   const [form] = Form.useForm()
   const { notification } = App.useApp()
   const [loading, setLoading] = useState<boolean>(false)
@@ -85,7 +85,7 @@ export default function ChangeEmail({ info, info_mutate }: IProps) {
         await httpService.put(AUTH_API + '/change-email', { email: newEmail, ...token })
         setOpen(false)
         resetFormState()
-        info_mutate({ ...info, email: maskEmail(newEmail) })
+        mutate_info({ ...info, email: maskEmail(newEmail) })
         notification.success({
           message: 'Thành công',
           description: 'Đã thay đổi địa chỉ Email',
@@ -237,9 +237,11 @@ export default function ChangeEmail({ info, info_mutate }: IProps) {
         >
           <div className="truncate font-semibold">{info?.email}</div>
         </Form.Item>
-        <Button onClick={() => setOpen(true)} type="link" className="px-0 w-fit justify-self-end">
-          Thay đổi
-        </Button>
+        {info?.email && (
+          <Button onClick={() => setOpen(true)} type="link" className="px-0 w-fit justify-self-end">
+            Thay đổi
+          </Button>
+        )}
       </div>
     </>
   )

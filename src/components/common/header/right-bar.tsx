@@ -12,6 +12,9 @@ import useSWRImmutable from 'swr/immutable'
 import { CART_API } from '~/utils/api-urls'
 import httpService from '~/lib/http-service'
 import Search from './search'
+import { LoginProvider } from '~/types/enum'
+import { googleLogout } from '@react-oauth/google'
+import { useFacebook } from '~/hooks/useFacebook'
 
 const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['items'] => [
   {
@@ -36,6 +39,7 @@ const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['ite
 
 export default function RightBar() {
   const { state, dispatch } = useAuth()
+  const { getFacebookLoginStatus, logoutFromFacebook } = useFacebook()
   const session = state.userInfo?.session
   const isAuthenticated = state.isAuthenticated
   const router = useRouter()
@@ -47,6 +51,18 @@ export default function RightBar() {
 
   const handleLogout = async (): Promise<void> => {
     await logout()
+
+    switch (state.userInfo?.provider) {
+      case LoginProvider.FACEBOOK:
+        const status = await getFacebookLoginStatus()
+        if (status.status === 'connected') await logoutFromFacebook()
+        break
+
+      case LoginProvider.GOOGLE:
+        googleLogout()
+        break
+    }
+
     dispatch(AuthActions.LOGOUT)
     router.push('/login')
   }

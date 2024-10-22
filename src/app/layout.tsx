@@ -24,7 +24,7 @@ const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-p
   ssr: false,
 })
 
-const Google_Client_ID = process.env.GOOGLE_CLIENT_ID
+const Google_Client_ID = process.env.GOOGLE_CLIENT_ID ?? ''
 
 export default async function RootLayout({
   children,
@@ -42,16 +42,8 @@ export default async function RootLayout({
 
   return (
     <html lang="vi">
-      <head>
-        <script
-          async
-          defer
-          crossOrigin="anonymous"
-          src="https://connect.facebook.net/en_US/sdk.js"
-        ></script>
-      </head>
       <body className={inter.className}>
-        <GoogleOAuthProvider clientId={Google_Client_ID ?? ''}>
+        <GoogleOAuthProvider clientId={Google_Client_ID}>
           <AuthProvider initialState={initialState}>
             <FavoriteProvider>
               <AntdRegistry>

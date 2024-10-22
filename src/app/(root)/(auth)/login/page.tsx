@@ -30,7 +30,8 @@ export default function Login() {
   const onSuccessLogin = (data: UserInfoType) => {
     dispatch(AuthActions.LOGIN(data))
     notification.info({
-      message: 'Đăng nhập thành công',
+      message: 'Thành công',
+      description: 'Đăng nhập thành công',
       className: 'text-green-500',
     })
     const redirectTo = redirect || '/'

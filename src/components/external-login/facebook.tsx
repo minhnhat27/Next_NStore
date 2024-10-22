@@ -24,15 +24,13 @@ export default function LoginFacebook({
 
   const login = async () => {
     try {
-      //   await logoutFromFacebook()
-
       const status = await getFacebookLoginStatus()
-      //   console.log(status)
-      let token = status.authResponse?.userID
-      if (status.status !== 'connected') {
-        const response = await loginWithFacebook()
-        token = response.authResponse?.userID
+      // let token = status.authResponse?.userID
+      if (status.status === 'connected') {
+        await logoutFromFacebook()
       }
+      const response = await loginWithFacebook()
+      const token = response.authResponse?.userID
       if (token) {
         startLoading()
         const data = await httpService.post(AUTH_API + '/login/facebook', { token })

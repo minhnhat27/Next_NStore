@@ -72,29 +72,26 @@ export const useFacebook = () => {
     loadFacebookSdk()
   }, [])
 
-  const loginWithFacebook = (): Promise<FB.LoginResponse> => {
-    return new Promise<FB.LoginResponse>((resolve, reject) => {
+  const loginWithFacebook = (): Promise<FB.LoginResponse> =>
+    new Promise<FB.LoginResponse>((resolve) => {
       window.FB.login((response: FB.LoginResponse) => {
         resolve(response)
       })
     })
-  }
 
-  const getFacebookLoginStatus = (): Promise<FB.LoginStatusResponse> => {
-    return new Promise<FB.LoginStatusResponse>((resolve, reject) => {
+  const getFacebookLoginStatus = (): Promise<FB.LoginStatusResponse> =>
+    new Promise<FB.LoginStatusResponse>((resolve) => {
       window.FB.getLoginStatus((response: FB.LoginStatusResponse) => {
         resolve(response)
       })
     })
-  }
 
-  const logoutFromFacebook = (): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
+  const logoutFromFacebook = (): Promise<void> =>
+    new Promise<void>((resolve) => {
       window.FB.logout(() => {
         resolve()
       })
     })
-  }
 
   return { loginWithFacebook, getFacebookLoginStatus, logoutFromFacebook }
 }
