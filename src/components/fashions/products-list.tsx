@@ -275,9 +275,9 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
   if (isLoading)
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton.Image key={i} className="h-80 w-full" active />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-4">
+        {[...new Array(pageSize)].map((_, i) => (
+          <Skeleton.Image key={i} className="h-56 xs:h-64 lg:h-72 w-full" active />
         ))}
       </div>
     )
@@ -319,7 +319,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
-            <CardProduct products={data?.items} />
+            <CardProduct products={data?.items} className="h-56 xs:h-64 lg:h-72" />
           </div>
           <Pagination
             hideOnSinglePage

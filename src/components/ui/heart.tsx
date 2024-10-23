@@ -4,12 +4,12 @@ import { useState } from 'react'
 import useAuth from '~/hooks/useAuth'
 import useFavorite from '~/hooks/useFavorites'
 
-interface IProps {
+interface Props extends IProps {
   productId: number
   label?: boolean | React.ReactNode
 }
 
-export default function Heart({ productId, label = false }: IProps) {
+export default function Heart({ productId, label = false, className }: Props) {
   const { state } = useAuth()
   const [loading, setLoading] = useState<boolean>(false)
   const { favorites, addFavorite, removeFavorite } = useFavorite()
@@ -37,9 +37,9 @@ export default function Heart({ productId, label = false }: IProps) {
           }}
           type="link"
           disabled={loading}
-          className="p-0 text-lg"
+          className={`p-0 text-xl ${className}`}
         >
-          <HeartFilled className="transition-transform hover:scale-125 text-red-500" />
+          <HeartFilled className="transition-transform hover:scale-125 text-red-600" />
         </Button>
         {label === true ? (
           <span className="text-sm text-black">Đã thích</span>
@@ -55,9 +55,9 @@ export default function Heart({ productId, label = false }: IProps) {
         }}
         type="link"
         disabled={loading}
-        className="p-0 text-lg"
+        className={`p-0 text-xl ${className}`}
       >
-        <HeartOutlined className="transition-transform hover:scale-125 text-red-500" />
+        <HeartOutlined className="transition-transform hover:scale-125 text-red-200" />
       </Button>
     ))
   )

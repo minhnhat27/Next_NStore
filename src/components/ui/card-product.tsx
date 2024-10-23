@@ -1,26 +1,23 @@
-import { HeartFilled, HeartOutlined } from '@ant-design/icons'
+'use client'
+
 import { Badge, Card, Empty, Rate } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
-import useAuth from '~/hooks/useAuth'
-import useFavorite from '~/hooks/useFavorites'
 import { formatCount, formatVND, toNextImageLink } from '~/utils/common'
 import Heart from './heart'
+import { StarFilled, StarOutlined } from '@ant-design/icons'
 
 const { Meta } = Card
 
-interface IProps {
+interface Props extends IProps {
   products?: ProductType[]
   /** rem */
   height?: number
+
   object?: 'cover' | 'contain' | 'fill' | 'none'
 }
 
-export default function CardProduct({ products, object = 'cover', height = 24 }: IProps) {
-  const { state } = useAuth()
-  const { favorites, addFavorite, removeFavorite } = useFavorite()
-
+export default function CardProduct({ products, object = 'cover', className }: Props) {
   if (!products || products.length === 0) return <Empty className="col-span-full" />
 
   return products.map((product, i) => {
@@ -40,9 +37,10 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
               loading={!product.id}
               hoverable
               styles={{
-                cover: { height: `${height - 7}rem` },
-                body: { padding: '1rem' },
+                body: { padding: '0.75rem' },
               }}
+              classNames={{ cover: className || 'h-48 xs:h-56 md:h-64' }}
+              rootClassName="relative"
               cover={
                 <Image
                   src={toNextImageLink(product.imageUrl)}
@@ -56,39 +54,40 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
                 />
               }
             >
+              <Heart className="absolute top-0" productId={product.id} />
               <Meta
-                title={product.name}
+                title={<div className="truncate text-sm sm:text-base">{product.name}</div>}
                 description={
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-h-14">
                     <div className="font-semibold text-red-500">
-                      <span className="text-lg">{formatVND.format(discountedPrice)}</span>
+                      <span className="text-base sm:text-lg">
+                        {formatVND.format(discountedPrice)}
+                      </span>
                       <span className="ml-2 text-xs text-gray-500 line-through">
                         {formatVND.format(product.price)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div>
-                        <>
-                          <Rate disabled count={1} value={1} />{' '}
-                          <span className="text-gray-500 text-xs">
-                            {product.rating ? (
-                              <>
-                                {product.rating}{' '}
-                                <span className="text-[0.6rem] text-gray-400">
-                                  ({formatCount(product.ratingCount)})
-                                </span>
-                              </>
-                            ) : (
-                              'Chưa có'
-                            )}
-                          </span>
-                        </>
+                        <Rate
+                          disabled
+                          count={1}
+                          value={1}
+                          character={!product.rating ? <StarOutlined /> : <StarFilled />}
+                        />{' '}
+                        <span className="text-gray-500 text-xs">
+                          {product.rating ? (
+                            <>
+                              {product.rating}{' '}
+                              <span className="text-[0.6rem] text-gray-400">
+                                ({formatCount(product.ratingCount)})
+                              </span>
+                            </>
+                          ) : null}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Heart productId={product.id} />
-                        <div className="text-xs 2xl:text-base text-slate-600">
-                          Đã bán {product.sold}
-                        </div>
+                      <div className="text-[0.65rem] 2xl:text-base text-slate-600">
+                        Đã bán {product.sold}
                       </div>
                     </div>
                   </div>
@@ -105,9 +104,10 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
           loading={!product.id}
           hoverable
           styles={{
-            cover: { height: `${height - 7}rem` },
-            body: { padding: '1rem' },
+            body: { padding: '0.75rem' },
           }}
+          classNames={{ cover: className || 'h-48 xs:h-56 md:h-64' }}
+          rootClassName="relative"
           cover={
             <>
               <Image
@@ -123,36 +123,35 @@ export default function CardProduct({ products, object = 'cover', height = 24 }:
             </>
           }
         >
+          <Heart className="absolute top-0" productId={product.id} />
           <Meta
-            title={product.name}
+            title={<div className="truncate text-sm sm:text-base">{product.name}</div>}
             description={
-              <div className="space-y-1">
-                <div className="font-semibold text-lg text-red-500">
+              <div className="space-y-1 min-h-14">
+                <div className="font-semibold text-base sm:text-lg text-red-500">
                   {formatVND.format(product.price)}
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <>
-                      <Rate disabled count={1} value={1} />{' '}
-                      <span className="text-gray-500 text-xs">
-                        {product.rating ? (
-                          <>
-                            {product.rating}{' '}
-                            <span className="text-[0.6rem] text-gray-400">
-                              ({formatCount(product.ratingCount)})
-                            </span>
-                          </>
-                        ) : (
-                          'Chưa có'
-                        )}
-                      </span>
-                    </>
+                    <Rate
+                      disabled
+                      count={1}
+                      value={1}
+                      character={!product.rating ? <StarOutlined /> : <StarFilled />}
+                    />{' '}
+                    <span className="text-gray-500 text-xs">
+                      {product.rating ? (
+                        <>
+                          {product.rating}{' '}
+                          <span className="text-[0.6rem] text-gray-400">
+                            ({formatCount(product.ratingCount)})
+                          </span>
+                        </>
+                      ) : null}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Heart productId={product.id} />
-                    <div className="text-xs 2xl:text-base text-slate-600">
-                      Đã bán {product.sold}
-                    </div>
+                  <div className="text-[0.65rem] 2xl:text-base text-slate-600">
+                    Đã bán {product.sold}
                   </div>
                 </div>
               </div>

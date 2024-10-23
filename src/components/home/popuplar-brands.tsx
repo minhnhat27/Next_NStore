@@ -1,6 +1,6 @@
 'use client'
 
-import { Carousel, Divider, Empty, Skeleton } from 'antd'
+import { Carousel, Empty, Skeleton } from 'antd'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import useSWRImmutable from 'swr/immutable'
