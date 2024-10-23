@@ -7,6 +7,11 @@ declare global {
       getLoginStatus: (callback: (response: FB.LoginStatusResponse) => void) => void
       login: (callback: (response: FB.LoginResponse) => void) => void
       logout: (callback?: () => void) => void
+      api: (
+        path: string,
+        params: { fields: string; access_token: string },
+        callback: (response: any) => void,
+      ) => void
     }
     fbAsyncInit: () => void
   }
@@ -36,6 +41,7 @@ export namespace FB {
       userID: string
     }
     status: 'connected' | 'not_authorized' | 'unknown'
+    name?: string
   }
 }
 
@@ -73,25 +79,40 @@ export const useFacebook = () => {
   }, [])
 
   const loginWithFacebook = (): Promise<FB.LoginResponse> =>
-    new Promise<FB.LoginResponse>((resolve) => {
+    new Promise<FB.LoginResponse & { name?: string }>((resolve) =>
+      window.FB.login((response: FB.LoginResponse) => resolve(response)),
+    )
+
+  const loginWithFacebookAndGetInfo = (): Promise<FB.LoginResponse> =>
+    new Promise<FB.LoginResponse>((resolve, reject) => {
       window.FB.login((response: FB.LoginResponse) => {
-        resolve(response)
+        if (response.authResponse) {
+          const { accessToken } = response.authResponse
+          window.FB.api(
+            '/me',
+            { fields: 'name', access_token: accessToken },
+            (userInfo: { name: string }) => {
+              resolve({ ...response, name: userInfo.name })
+            },
+          )
+        } else {
+          reject(new Error('Lấy thông tin thất bại.'))
+        }
       })
     })
 
   const getFacebookLoginStatus = (): Promise<FB.LoginStatusResponse> =>
-    new Promise<FB.LoginStatusResponse>((resolve) => {
-      window.FB.getLoginStatus((response: FB.LoginStatusResponse) => {
-        resolve(response)
-      })
-    })
+    new Promise<FB.LoginStatusResponse>((resolve) =>
+      window.FB.getLoginStatus((response: FB.LoginStatusResponse) => resolve(response)),
+    )
 
   const logoutFromFacebook = (): Promise<void> =>
-    new Promise<void>((resolve) => {
-      window.FB.logout(() => {
-        resolve()
-      })
-    })
+    new Promise<void>((resolve) => window.FB.logout(() => resolve()))
 
-  return { loginWithFacebook, getFacebookLoginStatus, logoutFromFacebook }
+  return {
+    loginWithFacebook,
+    getFacebookLoginStatus,
+    logoutFromFacebook,
+    loginWithFacebookAndGetInfo,
+  }
 }

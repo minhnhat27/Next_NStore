@@ -89,7 +89,7 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
         notification.success({
           message: 'Thành công',
           description: 'Đã thay đổi địa chỉ Email',
-          className: 'text-success-500',
+          className: 'text-green-500',
         })
       } else throw new Error('Không tìm thấy Email')
     } catch (error) {

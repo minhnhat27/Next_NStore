@@ -9,7 +9,7 @@ interface InfoType {
   phoneNumber?: string
   email?: string
 
-  facebook?: boolean
+  facebook?: string
 }
 
 type ChangePasswordType = {

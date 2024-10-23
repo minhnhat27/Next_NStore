@@ -1,5 +1,5 @@
 import { WarningOutlined } from '@ant-design/icons'
-import { Button, Card, Divider, Form, Input, Modal, Skeleton } from 'antd'
+import { Button, Card, Divider, Form, FormProps, Input, Modal, Skeleton } from 'antd'
 import { Dispatch, SetStateAction, useState } from 'react'
 import { BiSolidDiscount } from 'react-icons/bi'
 import useSWR from 'swr'
@@ -21,25 +21,31 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
   const [openModelVoucher, setOpenModelVoucher] = useState<boolean>(false)
   const [selected, setSelected] = useState<VoucherType | undefined>(voucher)
 
-  const [commonVoucher, setCommonVoucher] = useState<VoucherType>()
+  // const [commonVoucher, setCommonVoucher] = useState<VoucherType>()
 
   const [loading, setLoading] = useState<boolean>(false)
   // const [voucherApply, setVoucherApply] = useState<string>()
 
-  const { data: vouchers, isLoading } = useSWR<VoucherType[]>(
-    openModelVoucher && [VOUCHER_API, session],
-    ([VOUCHER_API, session]) => httpService.getWithSession(VOUCHER_API, session),
+  const {
+    data: vouchers,
+    isLoading,
+    mutate,
+  } = useSWR<VoucherType[]>(openModelVoucher && [VOUCHER_API, session], ([VOUCHER_API, session]) =>
+    httpService.getWithSession(VOUCHER_API, session),
   )
 
-  const handleApplyVoucher = async ({ code }: { code: string }) => {
+  const handleApplyVoucher: FormProps['onFinish'] = async (values) => {
     try {
-      setLoading(true)
-      // console.log(code)
-      const voucher = await httpService.get(VOUCHER_API + `/common/${code}`)
-      setCommonVoucher(voucher)
+      if (vouchers?.some((e) => e.code === values.code)) {
+        throw new Error('Mã giảm giá đã có sẳn.')
+      }
 
-      // const result = onChooseVoucher(voucher)
-      // if (result) closeModal()
+      setLoading(true)
+      const voucher = await httpService.post(VOUCHER_API + '/add-voucher', values)
+      mutate(vouchers ? [voucher, ...vouchers] : [voucher])
+      form.resetFields()
+      const result = onChooseVoucher(voucher)
+      if (result) closeModal()
     } catch (error) {
       form.setFields([
         {
@@ -60,9 +66,6 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
         open={openModelVoucher}
         onCancel={closeModal}
         onOk={() => {
-          // if (!form.getFieldValue('code')) {
-          //   onChooseVoucher(undefined)
-          // }
           const result = onChooseVoucher(selected)
           if (result) closeModal()
         }}
@@ -80,7 +83,13 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
               <Form.Item<{ code: string }>
                 name="code"
                 className="flex-1"
-                rules={[{ required: true, message: 'Vui lòng nhập mã giảm giá' }]}
+                rules={[
+                  {
+                    required: true,
+                    message: 'Vui lòng nhập mã giảm giá',
+                    validateTrigger: 'onSubmit',
+                  },
+                ]}
               >
                 <Input allowClear placeholder="Nhập mã giảm giá" className="rounded-sm" />
               </Form.Item>
@@ -90,7 +99,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
             </Form>
           </div>
         </div>
-        {commonVoucher && (
+        {/* {commonVoucher && (
           <Voucher
             voucher={commonVoucher}
             disabled={cartPrice < commonVoucher.minOrder || loading}
@@ -99,7 +108,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
                 ? setSelected(undefined)
                 : setSelected(commonVoucher)
             }
-            className={selected?.code === commonVoucher.code ? 'border-red-500' : 'border-gray-200'}
+            className={selected?.code === commonVoucher.code ? 'text-red-500' : ''}
           >
             {cartPrice < commonVoucher.minOrder && (
               <>
@@ -111,7 +120,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
               </>
             )}
           </Voucher>
-        )}
+        )} */}
         <div className="px-1">
           <Divider className="my-4" />
           <div className="font-semibold text-base">Voucher của bạn</div>
@@ -136,7 +145,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
                   onClick={() =>
                     selected?.code === v.code ? setSelected(undefined) : setSelected(v)
                   }
-                  className={selected?.code === v.code ? 'border-red-500' : 'border-gray-200'}
+                  className={selected?.code === v.code ? 'text-red-500' : ''}
                 >
                   {cartPrice < v.minOrder && (
                     <>
@@ -165,7 +174,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
           )}
         </div>
         <Button type="link" onClick={() => setOpenModelVoucher(true)} className="px-0">
-          Chọn Voucher
+          Chọn mã giảm giá
         </Button>
       </div>
     </>

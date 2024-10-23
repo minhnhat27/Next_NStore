@@ -7,7 +7,7 @@ import { AUTH_API } from '~/utils/api-urls'
 import { showError } from '~/utils/common'
 
 interface Props {
-  facebook?: boolean
+  facebook?: string
   info?: InfoType
   mutate_info: (info: InfoType) => void
 }
@@ -15,26 +15,26 @@ interface Props {
 export default function ExternalLoginLink({ facebook, info, mutate_info }: Props) {
   const { notification, message } = App.useApp()
   const [loading, setLoading] = useState<boolean>(false)
-  const { getFacebookLoginStatus, loginWithFacebook, logoutFromFacebook } = useFacebook()
+  const { getFacebookLoginStatus, loginWithFacebookAndGetInfo, logoutFromFacebook } = useFacebook()
 
   const linkToFacebook = async () => {
     try {
       const status = await getFacebookLoginStatus()
-      let token = status.authResponse?.userID
-      if (status.status !== 'connected') {
-        setLoading(true)
-        const response = await loginWithFacebook()
-
-        if (response.status === 'unknown') {
-          throw new Error('Đã hủy liên kết')
-        }
-
-        token = response.authResponse?.userID
+      if (status.status === 'connected') {
+        await logoutFromFacebook()
       }
+      setLoading(true)
+      const response = await loginWithFacebookAndGetInfo()
+
+      if (response.status === 'unknown') {
+        throw new Error('Đã hủy liên kết')
+      }
+
+      const token = response.authResponse?.userID
       if (token) {
-        await httpService.post(AUTH_API + '/link/facebook', { token })
-        mutate_info({ ...info, facebook: true })
-        logoutFromFacebook()
+        const name = response.name
+        await httpService.post(AUTH_API + '/link/facebook', { token, name })
+        mutate_info({ ...info, facebook: name })
         notification.success({
           message: 'Thành công',
           description: 'Đã liên kết tài khoản Facebook',
@@ -56,7 +56,7 @@ export default function ExternalLoginLink({ facebook, info, mutate_info }: Props
       }
 
       await httpService.get(AUTH_API + '/unlink/facebook')
-      mutate_info({ ...info, facebook: false })
+      mutate_info({ ...info, facebook: undefined })
 
       notification.success({
         message: 'Thành công',
@@ -97,9 +97,14 @@ export default function ExternalLoginLink({ facebook, info, mutate_info }: Props
             alt="facebook-logo"
           />
           {facebook ? (
-            <Popconfirm title="Xác nhận hủy liên kết" onConfirm={unlinkFacebook}>
-              <Button type="link">Hủy liên kết</Button>
-            </Popconfirm>
+            <>
+              <span className="mx-4 text-gray-600 font-semibold">{facebook}</span>
+              <Popconfirm title="Xác nhận hủy liên kết" onConfirm={unlinkFacebook}>
+                <Button className="px-0" type="link">
+                  Hủy liên kết
+                </Button>
+              </Popconfirm>
+            </>
           ) : (
             <Button loading={loading} onClick={linkToFacebook} type="link">
               Liên kết

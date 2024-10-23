@@ -1,5 +1,5 @@
-import { WarningOutlined } from '@ant-design/icons'
-import { Button, Divider } from 'antd'
+import { CheckCircleFilled, CheckCircleOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
 import { MouseEventHandler } from 'react'
 import { BiSolidDiscount } from 'react-icons/bi'
 import { formatDate, formatVND } from '~/utils/common'
@@ -17,7 +17,7 @@ export default function Voucher({ voucher, className, disabled, children, onClic
         type="text"
         disabled={disabled}
         onClick={onClick}
-        className={`w-full h-full my-2 p-0 hover:bg-inherit text-start ${className}`}
+        className={`relative w-full h-full my-1 p-0 hover:bg-inherit text-start shadow border-gray-200`}
       >
         <div className="grid grid-cols-4 min-h-28 w-full">
           <div className="bg-gray-100 h-full flex flex-col justify-center items-center rounded-s-md">
@@ -39,6 +39,11 @@ export default function Voucher({ voucher, className, disabled, children, onClic
             {children}
           </div>
         </div>
+        <CheckCircleFilled
+          className={`absolute text-lg right-2 ${
+            className || 'text-white border border-gray-300 rounded-full'
+          }`}
+        />
       </Button>
     </>
   )

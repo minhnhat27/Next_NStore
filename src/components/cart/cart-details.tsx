@@ -265,7 +265,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
       }
       if (voucher && price < voucher.minOrder) {
         notification.warning({
-          message: 'Đã hủy voucher không thể áp dụng',
+          message: 'Không đủ điều kiện áp dụng',
+          description: 'Đã hủy voucher không thể áp dụng',
           className: 'text-yellow-500',
         })
         setVoucher(undefined)
