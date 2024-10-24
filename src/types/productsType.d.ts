@@ -35,8 +35,10 @@ interface ProductReviewsType {
   id: string
   description?: string
   star: number
+  variant: string
   username: string
   imagesUrls: string[]
+  createdAt: string
 }
 
 interface ProductAttrsType {
@@ -63,8 +65,9 @@ interface ColorSizes {
 
 interface ProductDetailsType extends ProductType {
   colorSizes: ColorSizes[]
+  materialNames: string[]
   imageUrls: string[]
-  description: string
+  description?: string
 }
 
 interface VNPayCallback {

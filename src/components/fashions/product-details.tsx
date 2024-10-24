@@ -413,7 +413,7 @@ export default function Details({ id }: IProps) {
             }}
           />
         )}
-        {product && <Reviews id={product.id} description={product.description} />}
+        {product && <Reviews product={product} />}
       </div>
     </>
   )

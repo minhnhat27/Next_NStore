@@ -1,7 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { createContext, useState } from 'react'
+import { App } from 'antd'
+import { createContext, useEffect, useState } from 'react'
+import useSWRImmutable from 'swr/immutable'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
 import { ACCOUNT_API } from '~/utils/api-urls'
@@ -13,28 +14,36 @@ interface IProps {
 export const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined)
 
 export default function FavoriteProvider({ children }: IProps) {
-  // const { redirectIfNoAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<number[]>([])
+  const { message } = App.useApp()
 
-  const setFavorite = (fav: number[]) => setFavorites(fav)
+  const { state } = useAuth()
+  const session = state.userInfo?.session
+
+  const { data } = useSWRImmutable<number[]>(
+    state.isAuthenticated && [ACCOUNT_API + '/favorite', session],
+    ([url, session]) => httpService.getWithSession(url, session),
+  )
+
+  useEffect(() => {
+    if (data) setFavorites(data)
+  }, [data])
 
   const addFavorite = async (productId: number): Promise<void> => {
-    // redirectIfNoAuthenticated()
-
     const data = { id: productId }
     await httpService.post(ACCOUNT_API + '/favorite', data)
+    message.success('Đã thêm vào yêu thích')
     setFavorites((pre) => [...pre, productId])
   }
 
   const removeFavorite = async (productId: number): Promise<void> => {
-    // redirectIfNoAuthenticated()
-
     await httpService.del(ACCOUNT_API + `/favorite/${productId}`)
+    message.info('Đã xóa khỏi yêu thích')
     setFavorites((pre) => pre.filter((id) => id !== productId))
   }
 
   return (
-    <FavoritesContext.Provider value={{ favorites, setFavorite, addFavorite, removeFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite }}>
       {children}
     </FavoritesContext.Provider>
   )

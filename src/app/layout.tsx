@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import AuthProvider from '~/components/common/auth-provider'
+import AuthProvider from '~/providers/auth-provider'
 import { getUserInfo, hasAuthSession } from '~/lib/auth-service'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 
 import dynamic from 'next/dynamic'
 import { App } from 'antd'
-import FavoriteProvider from '~/components/common/favorite-provider'
+import FavoriteProvider from '~/providers/favorite-provider'
 import ChatBox from '~/components/chat/chat-box'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: 'Fashions Store',
 }
 
-const AntdStyleProvider = dynamic(() => import('~/components/layout/antd-style-provider'), {
+const AntdStyleProvider = dynamic(() => import('~/providers/antd-style-provider'), {
   ssr: false,
 })
 
@@ -45,16 +45,16 @@ export default async function RootLayout({
       <body className={inter.className}>
         <GoogleOAuthProvider clientId={Google_Client_ID}>
           <AuthProvider initialState={initialState}>
-            <FavoriteProvider>
-              <AntdRegistry>
-                <AntdStyleProvider>
-                  <App>
+            <AntdRegistry>
+              <AntdStyleProvider>
+                <App>
+                  <FavoriteProvider>
                     {children}
                     <ChatBox />
-                  </App>
-                </AntdStyleProvider>
-              </AntdRegistry>
-            </FavoriteProvider>
+                  </FavoriteProvider>
+                </App>
+              </AntdStyleProvider>
+            </AntdRegistry>
           </AuthProvider>
         </GoogleOAuthProvider>
       </body>

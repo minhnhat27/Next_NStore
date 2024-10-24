@@ -33,7 +33,6 @@ type AuthContextType = {
 
 type FavoritesContextType = {
   favorites: number[]
-  setFavorite: (fav: number[]) => void
   addFavorite: (id: number) => Promise<void>
   removeFavorite: (id: number) => Promise<void>
 }

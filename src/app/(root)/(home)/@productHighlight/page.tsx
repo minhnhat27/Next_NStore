@@ -19,7 +19,7 @@ export default function ProductHighlight() {
   const [page, setPage] = useState<number>(1)
   const [loading, setLoading] = useState<boolean>(true)
 
-  const pageSize = 2
+  const pageSize = 1
 
   const [currentSize] = useState<number>(() => {
     const size = searchParams.get('currentSize')
@@ -44,9 +44,11 @@ export default function ProductHighlight() {
 
   useEffect(() => {
     if (data) {
-      const newData = list.concat(data.items)
-      setList(newData)
-      setFeatured(newData)
+      setList((pre) => {
+        const newData = pre.concat(data.items)
+        setFeatured(newData)
+        return newData
+      })
     }
   }, [data])
 
@@ -59,7 +61,7 @@ export default function ProductHighlight() {
 
   return (
     <>
-      <div className="px-4 pb-4 grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+      <div className="px-4 pb-6 grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
         {loading ? (
           [...Array(pageSize)].map((_, i) => (
             <Skeleton.Image active className="h-48 xs:h-56 md:h-64 w-full" key={i} />
@@ -69,7 +71,7 @@ export default function ProductHighlight() {
         )}
       </div>
       {data && featured.length < data.totalItems && (
-        <div className="flex justify-center my-6">
+        <div className="flex justify-center mb-6">
           <Button
             loading={isLoading}
             onClick={onLoadMore}

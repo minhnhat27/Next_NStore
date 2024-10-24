@@ -1,6 +1,11 @@
-import Footer from '~/components/common/footer'
-import Header from '~/components/common/header'
-import MainLayout from '~/components/layout/main-layout'
+import { ConfigProvider, Layout } from 'antd'
+import { Suspense } from 'react'
+import Footer from '~/components/layout/footer'
+import Header from '~/components/layout/header'
+import Loading from './loading'
+
+import viVN from 'antd/locale/vi_VN'
+import BackTop from '~/components/ui/back-top'
 
 export default async function RootLayout({
   children,
@@ -8,8 +13,17 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <MainLayout header={<Header />} footer={<Footer />}>
-      {children}
-    </MainLayout>
+    <ConfigProvider locale={viVN}>
+      <Layout className="bg-white">
+        <Header />
+        <Suspense fallback={<Loading />}>
+          <div className="min-h-screen--header lg:container lg:mx-auto transition-all">
+            {children}
+          </div>
+        </Suspense>
+        <Footer />
+        <BackTop />
+      </Layout>
+    </ConfigProvider>
   )
 }

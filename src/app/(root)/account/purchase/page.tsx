@@ -323,9 +323,7 @@ export default function Purchase() {
                         <div>
                           {item.quantity} x {formatVND.format(item.originPrice)}
                         </div>
-                        <div className="text-gray-500 font-semibold">
-                          Phân loại: {item.colorName} - {item.sizeName}
-                        </div>
+                        <div className="text-gray-500 font-semibold">Phân loại: {item.variant}</div>
                       </>
                     }
                   />

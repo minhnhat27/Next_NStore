@@ -27,8 +27,7 @@ interface DeliveryInfo {
 interface ProductOrderDetail {
   productId?: number
   productName: string
-  sizeName: string
-  colorName: string
+  variant: string
   originPrice: number
   price: number
   quantity: number

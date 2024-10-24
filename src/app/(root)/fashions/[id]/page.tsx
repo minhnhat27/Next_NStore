@@ -28,7 +28,7 @@ const breadcrumbItems = (name: string) => [
 ]
 
 interface IProps {
-  params: { id: string }
+  params: { id: number }
   searchParams: { name: string | string[] | undefined }
 }
 
@@ -43,7 +43,7 @@ export async function generateMetadata({ searchParams }: IProps): Promise<Metada
 }
 
 export default function ProductDetails({ params, searchParams }: IProps) {
-  const id = parseInt(params.id)
+  const id = params.id
 
   if (isNaN(id) || id <= 0) return notFound()
 

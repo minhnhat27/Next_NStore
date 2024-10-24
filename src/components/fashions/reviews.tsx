@@ -1,17 +1,28 @@
-import { Avatar, List, Rate, Image as AntdImage, Tabs, TabsProps, Button, Skeleton } from 'antd'
+import {
+  Avatar,
+  List,
+  Rate,
+  Image as AntdImage,
+  Tabs,
+  TabsProps,
+  Button,
+  Skeleton,
+  Divider,
+  Card,
+} from 'antd'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
 import httpService from '~/lib/http-service'
+import { Gender } from '~/types/enum'
 import { FASHION_API } from '~/utils/api-urls'
-import { toNextImageLink } from '~/utils/common'
+import { formatDateTime, rateDesc, toNextImageLink } from '~/utils/common'
 
 interface IProps {
-  id: number
-  description?: string
+  product: ProductDetailsType
 }
 
-export default function Reviews({ id, description }: IProps) {
+export default function Reviews({ product }: IProps) {
   const [beginGetReviews, setBeginGetReviews] = useState<boolean>(false)
   const [params, setParams] = useState<PaginationType>({ page: 1, pageSize: 3 })
 
@@ -22,8 +33,10 @@ export default function Reviews({ id, description }: IProps) {
   const [reviews, setReviews] = useState<ProductReviewsType[]>([])
   const [list, setList] = useState<ProductReviewsType[]>([])
 
+  const [currentStar, setCurrentStar] = useState<number>(0)
+
   const { data, isLoading } = useSWRImmutable<PagedType<ProductReviewsType>>(
-    beginGetReviews && [FASHION_API + `/${id}/reviews`, params],
+    beginGetReviews && [FASHION_API + `/${product.id}/reviews`, params],
     ([url, params]) => httpService.getWithParams(url, params),
   )
 
@@ -36,9 +49,11 @@ export default function Reviews({ id, description }: IProps) {
 
   useEffect(() => {
     if (data) {
-      const newData = list.concat(data.items)
-      setList(newData)
-      setReviews(newData)
+      setList((pre) => {
+        const newData = pre.concat(data.items)
+        setReviews(newData)
+        return newData
+      })
     }
   }, [data])
 
@@ -48,7 +63,16 @@ export default function Reviews({ id, description }: IProps) {
 
   const onLoadMore = () => {
     setReviews(
-      list.concat([...new Array(3)].map(() => ({ id: '', star: 5, username: '', imagesUrls: [] }))),
+      list.concat(
+        [...new Array(3)].map(() => ({
+          id: '',
+          star: 5,
+          username: '',
+          imagesUrls: [],
+          createdAt: '',
+          variant: '',
+        })),
+      ),
     )
     setParams((pre) => ({ ...pre, page: pre.page + 1 }))
   }
@@ -68,10 +92,18 @@ export default function Reviews({ id, description }: IProps) {
       label: 'Chi tiết sản phẩm',
       children: (
         <div className="space-y-4">
-          <div className="grid grid-cols-12">
-            <div>Mô tả</div>
-            <div className="col-span-11">
-              {description || 'Chưa có mô tả'}
+          <div className="grid grid-cols-6 gap-2">
+            <div className="col-span-1">Danh mục</div>
+            <div className="col-span-5">{product.categoryName}</div>
+            <div className="col-span-1">Chất liệu</div>
+            <div className="col-span-5">{product.materialNames.map((e) => e).join(', ')}</div>
+            <div className="col-span-1">Giới tính</div>
+            <div className="col-span-5">{Gender[product.gender]}</div>
+            <div className="col-span-1">Thương hiệu</div>
+            <div className="col-span-5">{product.brandName}</div>
+            <div className="col-span-1">Mô tả</div>
+            <div className="col-span-5">
+              {product.description || 'Chưa có mô tả'}
               {/* {description
                   ? description?.split('\n').length > 5 && !isShowMore
                     ? description
@@ -92,11 +124,6 @@ export default function Reviews({ id, description }: IProps) {
                   </Button>
                 )} */}
             </div>
-            {/* <pre className="col-span-11">{description ?? 'Chưa có mô tả'}</pre> */}
-          </div>
-          <div className="grid grid-cols-12">
-            <div>Chất liệu</div>
-            <div className="col-span-11">95% Polyester 5% Spandex</div>
           </div>
         </div>
       ),
@@ -105,39 +132,113 @@ export default function Reviews({ id, description }: IProps) {
       key: '2',
       label: <div onClick={onBeginGetReviews}>Đánh giá sản phẩm</div>,
       children: (
-        <List
-          loading={loading}
-          itemLayout="horizontal"
-          loadMore={loadMore}
-          dataSource={reviews}
-          renderItem={(item, index) => (
-            <List.Item>
-              <Skeleton avatar title={false} loading={!item.id} active>
-                <List.Item.Meta
-                  avatar={<Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${index}`} />}
-                  title={<a href="https://ant.design">{item.username}</a>}
-                  description={<Rate disabled value={item.star} />}
+        <>
+          <Card className="rounded-sm">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="text-xl">
+                  <span className="text-3xl">{product.rating}</span> trên 5{' '}
+                </div>
+                <Rate
+                  className="text-red-500 text-nowrap"
+                  allowHalf
+                  disabled={true}
+                  value={product.rating}
                 />
-              </Skeleton>
-              {item.description}
-              <div className="flex gap-2 mt-2">
-                {item.imagesUrls.map((url, i) => (
-                  <Image
-                    key={i}
-                    width={0}
-                    height={0}
-                    quality={100}
-                    sizes="100vw"
-                    src={toNextImageLink(url)}
-                    onClick={() => onViewImage(url)}
-                    alt="review"
-                    className="w-32 h-32 object-cover cursor-pointer"
-                  />
-                ))}
               </div>
-            </List.Item>
-          )}
-        />
+              <div className="">
+                <div>
+                  {[...new Array(6)].map((_, i) => {
+                    if (i === 0)
+                      return (
+                        <Button
+                          key={i}
+                          onClick={() => setCurrentStar(i)}
+                          type={currentStar === i ? 'primary' : 'default'}
+                          className="rounded-sm md:px-6 m-1"
+                        >
+                          Tất cả
+                        </Button>
+                      )
+                    return (
+                      <Button
+                        key={i}
+                        onClick={() => setCurrentStar(i)}
+                        type={currentStar === i ? 'primary' : 'default'}
+                        className="rounded-sm md:px-6 m-1"
+                      >
+                        {i} Sao
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  onClick={() => setCurrentStar(6)}
+                  type={currentStar === 6 ? 'primary' : 'default'}
+                  className="rounded-sm md:px-6 m-1"
+                >
+                  Có bình luận
+                </Button>
+                <Button
+                  onClick={() => setCurrentStar(7)}
+                  type={currentStar === 7 ? 'primary' : 'default'}
+                  className="rounded-sm md:px-6 m-1"
+                >
+                  Có hình ảnh
+                </Button>
+              </div>
+            </div>
+          </Card>
+          <List
+            loading={loading}
+            itemLayout="horizontal"
+            loadMore={loadMore}
+            dataSource={reviews}
+            renderItem={(item, index) => (
+              <List.Item>
+                <Skeleton avatar title={false} loading={!item.id} active>
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${index}`} />
+                    }
+                    title={
+                      <div className="text-gray-500">
+                        <span className="text-sm">{item.username}</span>
+                        <Divider type="vertical" />
+                        <span className="text-xs">{formatDateTime(item.createdAt)}</span>
+                        <div className="text-sm">Phân loại: {item.variant}</div>
+                      </div>
+                    }
+                    description={
+                      <>
+                        <Rate className="text-base" disabled value={item.star} />{' '}
+                        {item.star ? (
+                          <span className="text-xs">{rateDesc[item.star - 1]}</span>
+                        ) : null}
+                      </>
+                    }
+                  />
+                </Skeleton>
+                {item.description}
+                <div className="flex gap-2 mt-2">
+                  {item.imagesUrls.map((url, i) => (
+                    <Image
+                      key={i}
+                      width={0}
+                      height={0}
+                      quality={100}
+                      sizes="100vw"
+                      src={toNextImageLink(url)}
+                      onClick={() => onViewImage(url)}
+                      alt="review"
+                      className="w-32 h-32 object-cover cursor-pointer"
+                    />
+                  ))}
+                </div>
+              </List.Item>
+            )}
+          />
+        </>
       ),
     },
   ]

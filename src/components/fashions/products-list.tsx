@@ -17,6 +17,7 @@ import {
   Select,
   Skeleton,
   Slider,
+  SliderSingleProps,
   Typography,
 } from 'antd'
 import { useSearchParams } from 'next/navigation'
@@ -27,6 +28,7 @@ import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
 import CardProduct from '../ui/card-product'
 import { initFilters } from '~/utils/initType'
+import { formatVND } from '~/utils/common'
 
 const { Title } = Typography
 
@@ -56,6 +58,9 @@ enum FilterEnums {
   FLASHSALE = 'flashsale',
 }
 
+const formatter: NonNullable<SliderSingleProps['tooltip']>['formatter'] = (value) =>
+  value && formatVND.format(value)
+
 interface IProps {
   brands: ProductAttrsType[]
   categories: ProductAttrsType[]
@@ -75,18 +80,25 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
     const urlParams = new URLSearchParams(searchParams)
     urlParams?.forEach((value, key) => {
-      if (key === 'materialIds' || key === 'categoryIds' || key === 'brandIds') {
+      if (
+        key === FilterEnums.MATERIALS ||
+        key === FilterEnums.CATEGORIES ||
+        key === FilterEnums.BRANDS ||
+        key === FilterEnums.GENDERS
+      ) {
         p[key] = value.split(',').map((v) => v.trim())
       } else if (key === 'maxPrice' || key === 'minPrice' || key === 'page' || key === 'pageSize') {
         p[key] = parseInt(value)
       } else p[key] = value
     })
 
-    p.priceRange = p.maxPrice
-      ? [p.minPrice ?? 0, p.maxPrice]
-      : p.minPrice
-      ? [p.minPrice]
-      : undefined
+    if (p.maxPrice) {
+      p.priceRange = [p.minPrice ?? 0, p.maxPrice]
+    } else if (p.minPrice) {
+      p.priceRange = [p.minPrice, p.minPrice]
+    } else {
+      p.priceRange = undefined
+    }
 
     return p
   })
@@ -273,6 +285,72 @@ export default function Products({ brands, categories, material, filtersProp }: 
     getFilters(filters, page, pageSize)
   }
 
+  const showFilters = useCallback((): React.ReactNode => {
+    let filtersName = ''
+
+    if (params.minPrice) {
+      filtersName += formatVND.format(params.minPrice)
+      if (params.maxPrice) {
+        filtersName += ' đến ' + formatVND.format(params.maxPrice)
+      }
+    } else {
+      if (params.maxPrice) {
+        filtersName += '0đ đến ' + formatVND.format(params.maxPrice)
+      }
+    }
+
+    const fil = Object.entries(params)
+      .filter(([key, value]) => value !== initFilters[key as keyof FilterType])
+      .map(([key, value]) => {
+        switch (key) {
+          case FilterEnums.BRANDS:
+            return value
+              ?.map((v: number) => brandOptions.find((e) => e.value === v)?.label)
+              .join(', ')
+          case FilterEnums.CATEGORIES:
+            return value
+              ?.map((v: number) => categoryOptions.find((e) => e.value === v)?.label)
+              .join(', ')
+          case FilterEnums.MATERIALS:
+            return value
+              ?.map((v: number) => materialOptions.find((e) => e.value === v)?.label)
+              .join(', ')
+          case FilterEnums.GENDERS:
+            return value
+              ?.map((v: string) => genderOpts.find((e) => e.value === v)?.label)
+              .join(', ')
+          case FilterEnums.FLASHSALE:
+            return 'Flash Sale'
+          case FilterEnums.DISCOUNT:
+            return 'Đang giảm giá'
+
+          default:
+            return ''
+        }
+      })
+      .filter((e) => e)
+      .join(', ')
+
+    if (fil) {
+      if (filtersName) {
+        filtersName += ' - '
+      }
+      filtersName += fil
+    }
+
+    if (params.rating) {
+      return (
+        <>
+          {filtersName && `${filtersName}, `}
+          {params.rating}
+          <Rate disabled value={1} count={1} />
+        </>
+      )
+    }
+
+    return filtersName
+  }, [params, initFilters, brandOptions, categoryOptions, materialOptions, genderOpts])
+
   if (isLoading)
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-4">
@@ -284,8 +362,11 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
   return (
     <>
-      <div className="py-2 flex flex-col sm:flex-row sm:justify-between">
-        <Title level={3}>Tất cả sản phẩm</Title>
+      <div className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <div className="text-2xl font-semibold text-nowrap">Tất cả sản phẩm:</div>
+          <div className="text-base">{showFilters()}</div>
+        </div>
         <Flex align="center" className="space-x-2">
           <Select
             disabled={data && data.items.length <= 0}
@@ -318,7 +399,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             <CardProduct products={data?.items} className="h-56 xs:h-64 lg:h-72" />
           </div>
           <Pagination
@@ -394,6 +475,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
           </div>
           <Title level={5}>Khoảng giá</Title>
           <Slider
+            tooltip={{ formatter }}
             range
             min={0}
             max={2000000}

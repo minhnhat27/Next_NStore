@@ -148,3 +148,5 @@ export const formatCount = (num: number) => {
   }
   return num.toString()
 }
+
+export const rateDesc = ['Tệ', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Tuyệt vời']

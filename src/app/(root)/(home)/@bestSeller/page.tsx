@@ -27,8 +27,8 @@ export default async function BestSeller() {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 sm:px-24 md:px-16 lg:px-28">
-        <CardProduct products={data?.items} className="h-72 md:h-80" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 lg:px-36">
+        <CardProduct products={data?.items} className="h-64 md:h-72 lg:h-80" />
       </div>
       <Link href="/fashions" className="flex justify-center my-6">
         <Button

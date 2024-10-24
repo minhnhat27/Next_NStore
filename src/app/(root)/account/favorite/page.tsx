@@ -41,9 +41,11 @@ export default function Favorite() {
 
   useEffect(() => {
     if (data) {
-      const newData = list.concat(data.items.filter((x) => !list.some((e) => e.id === x.id)))
-      setList(newData)
-      setFavorites(newData)
+      setList((pre) => {
+        const newData = pre.concat(data.items.filter((x) => !pre.some((e) => e.id === x.id)))
+        setFavorites(newData)
+        return newData
+      })
     }
   }, [data])
 

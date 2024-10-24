@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge, Card, Empty, Rate } from 'antd'
+import { Badge, Card, Empty, Rate, Skeleton } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
 import { formatCount, formatVND, toNextImageLink } from '~/utils/common'
@@ -24,7 +24,9 @@ export default function CardProduct({ products, object = 'cover', className }: P
     if (product.discountPercent) {
       const discountedPrice =
         product.price - product.price * ((product.discountPercent ?? 0) / 100.0)
-      return (
+      return !product.id ? (
+        <Card cover={<Skeleton.Image className="w-full h-36 xs:h-44 md:h-52" active />} loading />
+      ) : (
         <Link
           key={i}
           href={{
@@ -34,7 +36,6 @@ export default function CardProduct({ products, object = 'cover', className }: P
         >
           <Badge.Ribbon text={`-${product.discountPercent}%`} color="red">
             <Card
-              loading={!product.id}
               hoverable
               styles={{
                 body: { padding: '0.75rem' },
@@ -45,10 +46,10 @@ export default function CardProduct({ products, object = 'cover', className }: P
                 <Image
                   src={toNextImageLink(product.imageUrl)}
                   alt="Product Image"
+                  loading="lazy"
                   width={0}
                   height={0}
                   sizes="100vw"
-                  priority={i < 5}
                   quality={100}
                   className={`w-full h-full border object-${object}`}
                 />
@@ -93,12 +94,14 @@ export default function CardProduct({ products, object = 'cover', className }: P
                   </div>
                 }
               />
-            </Card>
+            </Card>{' '}
           </Badge.Ribbon>
         </Link>
       )
     }
-    return (
+    return !product.id ? (
+      <Card cover={<Skeleton.Image className="w-full h-36 xs:h-44 md:h-52" active />} loading />
+    ) : (
       <Link key={i} href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}>
         <Card
           loading={!product.id}
@@ -113,10 +116,10 @@ export default function CardProduct({ products, object = 'cover', className }: P
               <Image
                 src={toNextImageLink(product.imageUrl)}
                 alt="Product Image"
+                loading="lazy"
                 width={0}
                 height={0}
                 sizes="100vw"
-                priority={i < 5}
                 quality={100}
                 className={`w-full h-full border object-${object}`}
               />
