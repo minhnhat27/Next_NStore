@@ -10,9 +10,10 @@ import {
   Statistic,
   Tag,
   Image as AntdImage,
+  App,
 } from 'antd'
 import Image from 'next/image'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FaLocationDot } from 'react-icons/fa6'
 import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
@@ -27,20 +28,24 @@ import {
   formatDateTime,
   formatVND,
   getPaymentDeadline,
+  showError,
   toNextImageLink,
 } from '~/utils/common'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import TrackingOrder from '~/components/account/tracking-order'
+import dayjs from 'dayjs'
 const { Countdown } = Statistic
 
 const Processing_Status = OrderStatus['Đang xử lý']
 const Cancel_Status = OrderStatus['Đã hủy']
+const BeingDelivered_Status = OrderStatus['Đang giao hàng']
 const Received_Status = OrderStatus['Đã nhận hàng']
 
 export default function Purchase() {
   const { state } = useAuth()
   const session = state.userInfo?.session
   const { router } = useRealTimeParams()
+  const { message } = App.useApp()
 
   const [orderId, setOrderId] = useState<number>()
 
@@ -71,8 +76,12 @@ export default function Purchase() {
   }, [data])
 
   const handleCancelOrder = async (id: number): Promise<void> => {
-    await httpService.del(ORDER_API + `/${id}`)
-    setOrders((pre) => pre.map((e) => (e.id === id ? { ...e, orderStatus: Cancel_Status } : e)))
+    try {
+      await httpService.del(ORDER_API + `/${id}`)
+      setOrders((pre) => pre.map((e) => (e.id === id ? { ...e, orderStatus: Cancel_Status } : e)))
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const payBack = (url: string | undefined) => url && router.push(url)
@@ -108,6 +117,25 @@ export default function Purchase() {
     setShippingCode(undefined)
   }
 
+  const confirmDelivery = async (id: number) => {
+    try {
+      await httpService.put(ORDER_API + `/${id}/confirm-delivery`)
+      setOrders((pre) =>
+        pre.map((e) =>
+          e.id === id
+            ? {
+                ...e,
+                orderStatus: Received_Status,
+                reviewDeadline: dayjs().add(15, 'day').toISOString(),
+              }
+            : e,
+        ),
+      )
+    } catch (error) {
+      message.error(showError(error))
+    }
+  }
+
   return (
     <>
       <div id="scrollableDiv" className="overflow-auto max-h-[calc(100vh-10rem)]">
@@ -122,9 +150,11 @@ export default function Purchase() {
           <List
             itemLayout="vertical"
             dataSource={orders}
-            renderItem={(order) => (
+            renderItem={(order, i) => (
               <List.Item
-                className="border-x border-b drop-shadow-sm mb-2 p-4 bg-white rounded-sm"
+                className={`border-x border-t mb-4 shadow p-4 rounded-sm ${
+                  i % 2 !== 0 && 'bg-gray-100'
+                }`}
                 key={order.id}
               >
                 <List.Item.Meta
@@ -143,31 +173,42 @@ export default function Purchase() {
                           {OrderStatus[order.orderStatus]}
                         </Tag>
                       </div>
-                      <div className="flex flex-col md:flex-row justify-between md:items-center">
-                        {order.orderStatus !== Received_Status && order.expected_delivery_time && (
-                          <div>
-                            <span>Ngày nhận hàng dự kiến: </span>
-                            <span className="font-bold text-cyan-700">
-                              {formatDate(order.expected_delivery_time)}
-                            </span>
+                      {order.orderStatus !== Received_Status &&
+                        order.orderStatus !== Cancel_Status && (
+                          <div className="flex flex-col md:flex-row justify-between md:items-center">
+                            {order.expected_delivery_time && (
+                              <div>
+                                <span>Ngày nhận hàng dự kiến: </span>
+                                <span className="font-bold text-cyan-700">
+                                  {formatDate(order.expected_delivery_time)}
+                                </span>
+                              </div>
+                            )}
+                            {order.shippingCode && (
+                              <div className="text-end">
+                                Mã vận đơn:{' '}
+                                <span className="font-bold text-emerald-700">
+                                  {order.shippingCode}{' '}
+                                </span>
+                                <Button
+                                  onClick={() => onClickTrackOrder(order.shippingCode)}
+                                  type="link"
+                                  className="px-0"
+                                >
+                                  (Tra cứu)
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
-                        {order.orderStatus !== Cancel_Status && order.shippingCode && (
-                          <div className="text-end">
-                            Mã vận đơn:{' '}
-                            <span className="font-bold text-emerald-700">
-                              {order.shippingCode}{' '}
-                            </span>
-                            <Button
-                              onClick={() => onClickTrackOrder(order.shippingCode)}
-                              type="link"
-                              className="px-0"
-                            >
-                              (Tra cứu)
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                      {order.receivedDate && order.orderStatus === Received_Status && (
+                        <div className="text-end">
+                          Ngày nhận hàng:{' '}
+                          <span className="text-red-500 font-bold">
+                            {formatDate(order.receivedDate)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   }
                 />
@@ -226,14 +267,29 @@ export default function Purchase() {
                           </Button>
                         </div>
                       )}
-                    {order.orderStatus === Received_Status && !order.reviewed ? (
-                      <ReviewProduct
-                        order_details_load={order_details_load}
-                        order_details={order_details}
-                        id={order.id}
-                        getDetail={setId}
-                        mutateReview={mutateReview}
-                      />
+                    {order.orderStatus === Received_Status &&
+                    !order.reviewed &&
+                    order.receivedDate &&
+                    dayjs(order.reviewDeadline).diff(dayjs(), 'day') >= 0 ? (
+                      <>
+                        {dayjs(order.reviewDeadline).diff(dayjs(), 'day') === 0 ? (
+                          <span className="text-xs">
+                            Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'h')} giờ để đánh giá{' '}
+                          </span>
+                        ) : (
+                          <span className="text-xs">
+                            Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'day')} ngày để đánh giá{' '}
+                          </span>
+                        )}
+
+                        <ReviewProduct
+                          order_details_load={order_details_load}
+                          order_details={order_details}
+                          id={order.id}
+                          getDetail={setId}
+                          mutateReview={mutateReview}
+                        />
+                      </>
                     ) : (
                       order.reviewed && (
                         <>
@@ -242,7 +298,17 @@ export default function Purchase() {
                         </>
                       )
                     )}
-                    <Button className="m-1" onClick={() => onOpenDetail(order.id)}>
+                    {order.orderStatus === BeingDelivered_Status && (
+                      <Popconfirm
+                        title="Xác nhận đã nhận hàng"
+                        onConfirm={() => confirmDelivery(order.id)}
+                      >
+                        <Button className="m-1 rounded-sm" type="primary" danger>
+                          Đã nhận hàng
+                        </Button>
+                      </Popconfirm>
+                    )}
+                    <Button className="m-1 rounded-sm" onClick={() => onOpenDetail(order.id)}>
                       Xem chi tiết
                     </Button>
                     {order.orderStatus === Processing_Status && (
@@ -250,7 +316,7 @@ export default function Purchase() {
                         title="Xác nhận hủy đơn hàng"
                         onConfirm={() => handleCancelOrder(order.id)}
                       >
-                        <Button className="m-1" type="primary" danger>
+                        <Button className="m-1 rounded-sm" type="primary" danger>
                           Hủy đơn
                         </Button>
                       </Popconfirm>

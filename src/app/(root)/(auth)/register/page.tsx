@@ -1,6 +1,6 @@
 'use client'
 
-import { App, Button, Divider, Flex, Form, Image, Input, Typography } from 'antd'
+import { App, Button, Divider, Form, FormProps, Input, Typography } from 'antd'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { LockOutlined, UserOutlined, MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
@@ -9,6 +9,7 @@ import { showError } from '~/utils/common'
 import useCountdown from '~/hooks/useCountdown'
 import httpService from '~/lib/http-service'
 import { AUTH_API } from '~/utils/api-urls'
+import { CredentialResponse, GoogleLogin } from '@react-oauth/google'
 
 const { Title } = Typography
 
@@ -20,10 +21,10 @@ enum State {
 
 const Register: React.FC = () => {
   const [form] = Form.useForm()
-  const { notification } = App.useApp()
+  const { notification, message } = App.useApp()
   const router = useRouter()
-  const [OTP, setOTP] = useState('')
-  const [email, setEmail] = useState('')
+  const [OTP, setOTP] = useState<string>()
+  const [email, setEmail] = useState<string>()
   const [formState, setFormState] = useState(State.EMAIL)
   const [loading, setLoading] = useState(false)
 
@@ -35,21 +36,12 @@ const Register: React.FC = () => {
   const nextFormState = () =>
     setFormState(formState < Object.keys(State).length - 1 ? formState + 1 : formState)
 
-  // useEffect(() => {
-  //   if (countdown > 0) {
-  //     const timerId = setTimeout(() => setCountdown(countdown - 1), 1000)
-  //     return () => clearTimeout(timerId)
-  //   }
-  // }, [countdown])
-
-  const handleSendOTP = async () => {
+  const handleSendOTP = async (email: string) => {
     try {
-      const em = form.getFieldValue('email')
-      const data: SendOTPType = {
-        email: em,
-      }
+      // const em = form.getFieldValue('email')
+      const data: SendOTPType = { email }
       await httpService.post(AUTH_API + '/send-otp', data)
-      setEmail(em)
+      setEmail(email)
       nextFormState()
     } catch (error: any) {
       form.setFields([
@@ -61,14 +53,14 @@ const Register: React.FC = () => {
     }
   }
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyOTP = async (token: string) => {
     try {
-      const data: VerifyOTPType = {
-        email: form.getFieldValue('email'),
-        token: OTP,
-      }
-      await httpService.post(AUTH_API + '/verify-otp', data)
-      nextFormState()
+      if (email) {
+        const data: VerifyOTPType = { email, token }
+        await httpService.post(AUTH_API + '/verify-otp', data)
+        setOTP(token)
+        nextFormState()
+      } else throw new Error('Email không tồn tại')
     } catch (error: any) {
       form.setFields([
         {
@@ -79,12 +71,12 @@ const Register: React.FC = () => {
     }
   }
 
-  const handleRegister = async () => {
+  const handleRegister = async (values: any) => {
     try {
       const data: RegisterType = {
-        ...form.getFieldsValue(),
+        ...values,
         token: OTP,
-        email: email,
+        email,
       }
       await httpService.post(AUTH_API + '/register', data)
 
@@ -104,20 +96,20 @@ const Register: React.FC = () => {
     }
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit: FormProps['onFinish'] = async (values) => {
     setLoading(true)
     switch (formState) {
       case State.EMAIL: {
-        await handleSendOTP()
+        await handleSendOTP(values.email)
         setCountdown(60)
         break
       }
       case State.VERIFY: {
-        await handleVerifyOTP()
+        await handleVerifyOTP(values.token)
         break
       }
       case State.REGISTER: {
-        await handleRegister()
+        await handleRegister(values)
         break
       }
     }
@@ -135,9 +127,26 @@ const Register: React.FC = () => {
     setCountdown(60)
   }
 
+  const googleRegister = async (response: CredentialResponse) => {
+    try {
+      setLoading(true)
+      if (response.credential) {
+        await httpService.post(AUTH_API + '/register/google', { token: response.credential })
+        setFormState(State.REGISTER)
+        // setIsGoogleRegister(true)
+        setOTP(response.credential)
+        setEmail(undefined)
+      } else throw Error('Không thể đăng ký với Google')
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
-      <Flex className="h-16">
+      <div className="flex h-16">
         {formState === State.VERIFY && (
           <Button onClick={previousFormState} type="text">
             <ArrowLeftOutlined className="text-2xl" />
@@ -150,7 +159,7 @@ const Register: React.FC = () => {
             ? 'Nhập mã xác nhận'
             : 'Xác nhận thông tin'}
         </Title>
-      </Flex>
+      </div>
       <Form form={form} disabled={loading} layout="vertical" onFinish={handleSubmit}>
         {formState === State.EMAIL ? (
           <Form.Item<SendOTPType>
@@ -172,22 +181,20 @@ const Register: React.FC = () => {
           </Form.Item>
         ) : formState === State.VERIFY ? (
           <div className="text-center">
-            <Flex vertical className="mb-8">
+            <div className="mb-8 flex flex-col items-center">
               <span>Mã xác thực sẽ được gửi qua Email đến</span>
               <span className="space-x-1">
                 <MailOutlined className="text-gray-400" />
                 <span>{email}</span>
               </span>
-            </Flex>
+            </div>
             <Form.Item<RegisterType>
               name="token"
               rules={[{ required: true, message: 'Vui lòng nhập mã xác thực.' }]}
             >
-              <Flex justify="center">
-                <Input.OTP value={OTP} onChange={setOTP} size="large" />
-              </Flex>
+              <Input.OTP size="large" />
             </Form.Item>
-            <Flex vertical className="h-16">
+            <div className="h-16 flex flex-col items-center">
               {countdown > 0 ? (
                 <span className="text-gray-500">
                   Vui lòng chờ <span className="font-semibold text-red-500">{countdown}</span> giây
@@ -201,7 +208,7 @@ const Register: React.FC = () => {
                   </Button>
                 </>
               )}
-            </Flex>
+            </div>
           </div>
         ) : (
           <>
@@ -266,22 +273,28 @@ const Register: React.FC = () => {
         </Form.Item>
       </Form>
       {formState === State.EMAIL && (
-        <>
-          <Divider className="my-4" plain>
-            Hoặc tiếp tục với
-          </Divider>
-          <Flex justify="center" align="center" className="space-x-3">
-            <Image alt="logo" src="/images/Facebook_Logo.png" width={35} preview={false} />
-            <Image alt="logo" src="/images/Google_Logo.png" width={35} preview={false} />
-          </Flex>
-          <Flex justify="space-between" align="center" className="mt-2 text-xs md:text-sm">
+        <div className="space-y-4">
+          <Divider plain>Đăng ký với</Divider>
+          <div className="flex justify-center">
+            <Button disabled={loading} type="link" className="p-0">
+              <GoogleLogin
+                type="icon"
+                shape="circle"
+                context="signup"
+                useOneTap
+                onSuccess={googleRegister}
+                onError={() => message.error('Đăng nhập bằng Google thất bại')}
+              />
+            </Button>
+          </div>
+          <div className="flex justify-between items-center text-xs md:text-sm">
             <Link href="/forget-password">Quên mật khẩu</Link>
             <span>
               Đã có tài khoản?
               <Link href="/login"> Đăng nhập</Link>
             </span>
-          </Flex>
-        </>
+          </div>
+        </div>
       )}
     </>
   )

@@ -230,11 +230,8 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
       >
         {renderInteface()}
       </Modal>
-      <div className="flex justify-between items-center">
-        <Form.Item
-          label="Địa chỉ Email (Tên đăng nhập)"
-          rules={[{ required: true, message: 'Vui lòng nhập tên của bạn.' }]}
-        >
+      <div className="flex flex-row justify-between items-center">
+        <Form.Item className="truncate" label="Địa chỉ Email (Tên đăng nhập)">
           <div className="truncate font-semibold">{info?.email}</div>
         </Form.Item>
         {info?.email && (

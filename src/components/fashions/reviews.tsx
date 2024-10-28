@@ -34,6 +34,9 @@ export default function Reviews({ product }: IProps) {
   const [list, setList] = useState<ProductReviewsType[]>([])
 
   const [currentStar, setCurrentStar] = useState<number>(0)
+  // const [hasPicture, setHasPicture] = useState<boolean>(false)
+
+  // console.log(product.id)
 
   const { data, isLoading } = useSWRImmutable<PagedType<ProductReviewsType>>(
     beginGetReviews && [FASHION_API + `/${product.id}/reviews`, params],

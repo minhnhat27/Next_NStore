@@ -13,9 +13,9 @@ const getWithSessionParams = (url: string, session: any, params: any) =>
     .get(`${url}?session=${session}`, { params: params, paramsSerializer: { indexes: true } })
     .then((res) => res.data)
 
-const post = (url: string, data: any) => axios.post(url, data).then((res) => res.data)
+const post = (url: string, data?: any) => axios.post(url, data).then((res) => res.data)
 
-const put = (url: string, data: any) => axios.put(url, data).then((res) => res.data)
+const put = (url: string, data?: any) => axios.put(url, data).then((res) => res.data)
 
 const del = (url: string) => axios.delete(url)
 

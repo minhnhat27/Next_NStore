@@ -5,7 +5,7 @@ type LoginType = {
 
 type RegisterType = {
   name: string
-  email: string
+  email?: string
   token: string
   password: string
 }

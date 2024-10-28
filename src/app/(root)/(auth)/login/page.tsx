@@ -39,7 +39,7 @@ export default function Login() {
   }
 
   const startLoading = () => {
-    setLoading(true)
+    setLoading(true)  
   }
   const stopLoading = () => {
     setLoading(false)

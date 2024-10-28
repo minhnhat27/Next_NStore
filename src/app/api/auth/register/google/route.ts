@@ -7,7 +7,7 @@ const API_URL = process.env.API_URL + '/api/auth'
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json()
-    const res = await axios.post(API_URL + '/register', data)
+    const res = await axios.post(API_URL + '/register/google', data)
     return NextSuccess(res.data, res.status)
   } catch (error: any) {
     return NextError(error)

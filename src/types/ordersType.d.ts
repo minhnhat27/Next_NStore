@@ -3,6 +3,7 @@ interface OrderType {
   orderDate: string
   shippingCost: number
   receivedDate?: string
+  reviewDeadline?: string
   reviewed?: boolean
   total: number
   amountPaid: number
