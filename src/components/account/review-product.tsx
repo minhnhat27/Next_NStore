@@ -1,4 +1,4 @@
-import { PlusOutlined } from '@ant-design/icons'
+import { CameraTwoTone, PlusOutlined } from '@ant-design/icons'
 import {
   App,
   Button,
@@ -14,10 +14,13 @@ import {
   UploadFile,
   UploadProps,
 } from 'antd'
-import { memo, useEffect, useState } from 'react'
+import Image from 'next/image'
+import { memo, useState } from 'react'
+import { mutate } from 'swr'
 import httpService from '~/lib/http-service'
-import { ORDER_API } from '~/utils/api-urls'
-import { getBase64, showError } from '~/utils/common'
+import { FASHION_API, ORDER_API } from '~/utils/api-urls'
+import { getBase64, showError, toNextImageLink } from '~/utils/common'
+import { initPagination } from '~/utils/initType'
 
 interface IProps {
   id: number
@@ -32,12 +35,14 @@ type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
 
 type ReviewType = {
   productId: number
+  variant: string
   productName?: string
   description?: string
   star: number
+  imageUrl?: string
 }
 
-type UploadType = { productId: number; files: UploadFile[] }
+type UploadType = { productId: number; variant: string; files: UploadFile[] }
 
 const ReviewProduct = ({
   id,
@@ -69,7 +74,7 @@ const ReviewProduct = ({
     try {
       setLoading(true)
       const formData = new FormData()
-      review.forEach((e: ReviewType) => delete e.productName)
+      // review.forEach((e: ReviewType) => delete e.productName)
 
       review.forEach((item, i) => {
         Object.keys(item).forEach((key) => {
@@ -95,6 +100,8 @@ const ReviewProduct = ({
       form.resetFields()
       setFileList([])
       mutateReview(id)
+
+      review.forEach((item) => mutate([FASHION_API + `/${item.productId}/reviews`, initPagination]))
     } catch (error) {
       notification.error({
         message: 'Thất bại',
@@ -111,23 +118,27 @@ const ReviewProduct = ({
     getDetail(id)
   }
 
-  const handleChange = (productId: number, newFileList: any) => {
-    const existingProduct = fileList.some((item) => item.productId === productId)
+  const handleChange = (productId: number, variant: string, newFileList: any) => {
+    const existingProduct = fileList.some(
+      (item) => item.productId === productId && item.variant === variant,
+    )
     let newList
     if (existingProduct) {
       newList = fileList.map((item) =>
-        item.productId === productId ? { ...item, files: newFileList } : item,
+        item.productId === productId && item.variant === variant
+          ? { ...item, files: newFileList }
+          : item,
       )
     } else {
-      newList = [...fileList, { productId, files: newFileList }]
+      newList = [...fileList, { productId, variant, files: newFileList }]
     }
     setFileList(newList)
   }
 
   const uploadButton = (
     <button type="button">
-      <PlusOutlined />
-      <div>Upload</div>
+      <CameraTwoTone className="text-xl" />
+      <div>Tải ảnh lên</div>
     </button>
   )
 
@@ -161,8 +172,12 @@ const ReviewProduct = ({
         destroyOnClose
         centered
         title={`Đánh giá đơn hàng #${id}`}
-        className="rounded-sm"
-        styles={{ content: { borderRadius: 3, margin: '0.5rem 0' } }}
+        // className="no-scrollbar rounded-sm max-h-[90vh] overflow-auto"
+        styles={{
+          content: { borderRadius: 2 },
+          body: { maxHeight: '70vh', overflow: 'auto' },
+        }}
+        classNames={{ body: 'no-scrollbar' }}
         maskClosable={false}
         modalRender={(dom) => (
           <Form layout="vertical" form={form} name="changeEmail" onFinish={onFinish}>
@@ -178,6 +193,8 @@ const ReviewProduct = ({
                   productId: value.productId,
                   productName: value.productName,
                   star: 5,
+                  variant: value.variant,
+                  imageUrl: value.imageUrl,
                 }
                 return data
               }
@@ -191,13 +208,26 @@ const ReviewProduct = ({
                   <div key={i}>
                     <Form.Item noStyle dependencies={['review', field.name, 'productId']}>
                       {({ getFieldValue }) => {
+                        const imageUrl = getFieldValue(['review', field.name, 'imageUrl'])
                         const productName = getFieldValue(['review', field.name, 'productName'])
+                        const variant = getFieldValue(['review', field.name, 'variant'])
                         return (
-                          <div className="font-semibold text-lg text-gray-700">{productName}</div>
+                          <div className="flex items-center gap-2">
+                            <Image
+                              height={0}
+                              width={0}
+                              sizes="10vw"
+                              className="h-14 w-14 object-cover"
+                              src={toNextImageLink(imageUrl)}
+                              alt="product"
+                            />
+                            <div className="font-semibold text-lg text-gray-700">
+                              {productName} - {variant}
+                            </div>
+                          </div>
                         )
                       }}
                     </Form.Item>
-
                     <Divider className="my-1" />
                     <Form.Item
                       layout="horizontal"
@@ -234,8 +264,11 @@ const ReviewProduct = ({
                     >
                       {({ getFieldValue }) => {
                         const productId = getFieldValue(['review', field.name, 'productId'])
+                        const variant = getFieldValue(['review', field.name, 'variant'])
+
                         const currentFileList =
-                          fileList.find((e) => e.productId === productId)?.files || []
+                          fileList.find((e) => e.productId === productId && e.variant === variant)
+                            ?.files || []
 
                         return (
                           <Upload
@@ -244,7 +277,7 @@ const ReviewProduct = ({
                             listType="picture-card"
                             fileList={currentFileList}
                             onPreview={handlePreview}
-                            onChange={({ fileList }) => handleChange(productId, fileList)}
+                            onChange={({ fileList }) => handleChange(productId, variant, fileList)}
                           >
                             {currentFileList.length >= 3 ? null : uploadButton}
                           </Upload>

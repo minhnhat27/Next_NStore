@@ -15,7 +15,7 @@ interface OrderType {
   shippingCode?: string
   expected_delivery_time?: string
 
-  productOrderDetail: ProductOrderDetail
+  productOrderDetail?: ProductOrderDetail
 
   payBackUrl?: string
 }

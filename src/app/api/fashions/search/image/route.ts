@@ -4,10 +4,11 @@ import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/products'
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest) {
   try {
-    const id = (await params).id
-    const res = await axios.get(API_URL + `/${id}`)
+    const data = await req.formData()
+    const res = await axios.post(API_URL + '/search/image', data)
+
     return NextSuccess(res.data, res.status)
   } catch (error: any) {
     return NextError(error)

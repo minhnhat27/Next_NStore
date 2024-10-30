@@ -3,8 +3,11 @@ import { Metadata } from 'next'
 import BreadcrumbLink from '~/components/ui/breadcrumb'
 import Details from '../../../../components/fashions/product-details'
 import { notFound } from 'next/navigation'
+import httpService from '~/lib/http-service'
+import { PRODUCT_API } from '~/utils/api-urls'
+import { Button, Result } from 'antd'
 
-// export const revalidate = 7200
+export const revalidate = 360
 
 // export const dynamicParams = true
 
@@ -28,12 +31,11 @@ const breadcrumbItems = (name: string) => [
 ]
 
 interface IProps {
-  params: { id: number }
+  params: { id: string }
   searchParams: { name: string | string[] | undefined }
 }
 
 export async function generateMetadata({ searchParams }: IProps): Promise<Metadata> {
-  // const details = await getDetails(params.id)
   const name = searchParams.name?.toString()
 
   return {
@@ -42,19 +44,34 @@ export async function generateMetadata({ searchParams }: IProps): Promise<Metada
   }
 }
 
-export default function ProductDetails({ params, searchParams }: IProps) {
-  const id = params.id
+const API_URL = process.env.API_URL
 
-  if (isNaN(id) || id <= 0) return notFound()
+const getProduct = async (id: number): Promise<ProductDetailsType | undefined> => {
+  try {
+    const data = await httpService.get(`${API_URL}${PRODUCT_API}/${id}`)
+    return data
+  } catch (error) {
+    return undefined
+  }
+}
 
-  // console.log('Product ID:', id)
+export default async function ProductDetails({ params, searchParams }: IProps) {
+  const id = parseInt(params.id)
+  // const router
+  // console.log(id)
+
+  if (isNaN(id) || !id) return notFound()
+
+  const product = await getProduct(id)
+
+  if (!product) return <Result status={404} title="Không tìm thấy sản phẩm" />
 
   return (
     <div className="p-4 space-y-4">
       <BreadcrumbLink
         items={breadcrumbItems(searchParams.name?.toString() ?? 'Chi tiết sản phẩm')}
       />
-      <Details id={id} />
+      <Details product={product} />
     </div>
   )
 }

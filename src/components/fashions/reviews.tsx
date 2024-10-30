@@ -17,14 +17,34 @@ import httpService from '~/lib/http-service'
 import { Gender } from '~/types/enum'
 import { FASHION_API } from '~/utils/api-urls'
 import { formatDateTime, rateDesc, toNextImageLink } from '~/utils/common'
+import { initPagination } from '~/utils/initType'
 
-interface IProps {
+interface Props {
   product: ProductDetailsType
 }
 
-export default function Reviews({ product }: IProps) {
+enum ReviewFilters {
+  ALL,
+  ONE,
+  TWO,
+  THREE,
+  FOUR,
+  FIVE,
+  HAVECOMMENT,
+  HAVEPICTURE,
+}
+
+export default function Reviews({ product }: Props) {
   const [beginGetReviews, setBeginGetReviews] = useState<boolean>(false)
-  const [params, setParams] = useState<PaginationType>({ page: 1, pageSize: 3 })
+
+  // const [currentStar, setCurrentStar] = useState<number>(0)
+  const [isShowMore, setIsShowMore] = useState<boolean>(true)
+
+  const [params, setParams] = useState<PaginationType & { rate: ReviewFilters }>({
+    ...initPagination,
+    rate: 0,
+    pageSize: 5,
+  })
 
   const [loading, setLoading] = useState<boolean>(true)
   const [visible, setVisible] = useState<boolean>(false)
@@ -33,13 +53,8 @@ export default function Reviews({ product }: IProps) {
   const [reviews, setReviews] = useState<ProductReviewsType[]>([])
   const [list, setList] = useState<ProductReviewsType[]>([])
 
-  const [currentStar, setCurrentStar] = useState<number>(0)
-  // const [hasPicture, setHasPicture] = useState<boolean>(false)
-
-  // console.log(product.id)
-
   const { data, isLoading } = useSWRImmutable<PagedType<ProductReviewsType>>(
-    beginGetReviews && [FASHION_API + `/${product.id}/reviews`, params],
+    beginGetReviews ? [FASHION_API + `/${product.id}/reviews`, params] : null,
     ([url, params]) => httpService.getWithParams(url, params),
   )
 
@@ -52,19 +67,25 @@ export default function Reviews({ product }: IProps) {
 
   useEffect(() => {
     if (data) {
-      setList((pre) => {
-        const newData = pre.concat(data.items)
-        setReviews(newData)
-        return newData
-      })
+      if (isShowMore) {
+        setList((pre) => {
+          const newData = pre.concat(data.items)
+          setReviews(newData)
+          return newData
+        })
+      } else {
+        setList(data.items)
+        setReviews(data.items)
+      }
     }
-  }, [data])
+  }, [data, isShowMore])
 
   useEffect(() => {
     if (!isLoading && beginGetReviews) setLoading(false)
   }, [isLoading, beginGetReviews])
 
   const onLoadMore = () => {
+    setIsShowMore(true)
     setReviews(
       list.concat(
         [...new Array(3)].map(() => ({
@@ -78,6 +99,11 @@ export default function Reviews({ product }: IProps) {
       ),
     )
     setParams((pre) => ({ ...pre, page: pre.page + 1 }))
+  }
+
+  const onChangeRate = (rate: ReviewFilters) => {
+    setIsShowMore(false)
+    setParams({ ...initPagination, pageSize: 5, rate })
   }
 
   const loadMore =
@@ -105,7 +131,7 @@ export default function Reviews({ product }: IProps) {
             <div className="col-span-1">Thương hiệu</div>
             <div className="col-span-5">{product.brandName}</div>
             <div className="col-span-1">Mô tả</div>
-            <div className="col-span-5">
+            <pre className="col-span-5">
               {product.description || 'Chưa có mô tả'}
               {/* {description
                   ? description?.split('\n').length > 5 && !isShowMore
@@ -126,7 +152,7 @@ export default function Reviews({ product }: IProps) {
                     {!isShowMore ? 'Xem thêm' : 'Thu gọn'}
                   </Button>
                 )} */}
-            </div>
+            </pre>
           </div>
         </div>
       ),
@@ -152,12 +178,13 @@ export default function Reviews({ product }: IProps) {
               <div className="">
                 <div>
                   {[...new Array(6)].map((_, i) => {
-                    if (i === 0)
+                    if (i === ReviewFilters.ALL)
                       return (
                         <Button
                           key={i}
-                          onClick={() => setCurrentStar(i)}
-                          type={currentStar === i ? 'primary' : 'default'}
+                          onClick={() => onChangeRate(i)}
+                          disabled={isLoading}
+                          type={params.rate === i ? 'primary' : 'default'}
                           className="rounded-sm md:px-6 m-1"
                         >
                           Tất cả
@@ -166,8 +193,9 @@ export default function Reviews({ product }: IProps) {
                     return (
                       <Button
                         key={i}
-                        onClick={() => setCurrentStar(i)}
-                        type={currentStar === i ? 'primary' : 'default'}
+                        disabled={isLoading}
+                        onClick={() => onChangeRate(i)}
+                        type={params.rate === i ? 'primary' : 'default'}
                         className="rounded-sm md:px-6 m-1"
                       >
                         {i} Sao
@@ -176,15 +204,17 @@ export default function Reviews({ product }: IProps) {
                   })}
                 </div>
                 <Button
-                  onClick={() => setCurrentStar(6)}
-                  type={currentStar === 6 ? 'primary' : 'default'}
+                  disabled={isLoading}
+                  onClick={() => onChangeRate(ReviewFilters.HAVECOMMENT)}
+                  type={params.rate === ReviewFilters.HAVECOMMENT ? 'primary' : 'default'}
                   className="rounded-sm md:px-6 m-1"
                 >
                   Có bình luận
                 </Button>
                 <Button
-                  onClick={() => setCurrentStar(7)}
-                  type={currentStar === 7 ? 'primary' : 'default'}
+                  disabled={isLoading}
+                  onClick={() => onChangeRate(ReviewFilters.HAVEPICTURE)}
+                  type={params.rate === ReviewFilters.HAVEPICTURE ? 'primary' : 'default'}
                   className="rounded-sm md:px-6 m-1"
                 >
                   Có hình ảnh
@@ -223,18 +253,18 @@ export default function Reviews({ product }: IProps) {
                   />
                 </Skeleton>
                 {item.description}
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-4 mt-2">
                   {item.imagesUrls.map((url, i) => (
                     <Image
                       key={i}
                       width={0}
                       height={0}
                       quality={100}
-                      sizes="100vw"
+                      sizes="20vw"
                       src={toNextImageLink(url)}
                       onClick={() => onViewImage(url)}
                       alt="review"
-                      className="w-32 h-32 object-cover cursor-pointer"
+                      className="w-24 h-24 object-cover cursor-pointer"
                     />
                   ))}
                 </div>
@@ -245,6 +275,8 @@ export default function Reviews({ product }: IProps) {
       ),
     },
   ]
+
+  // console.log(product.id)
 
   return (
     <>

@@ -120,17 +120,16 @@ export default function Purchase() {
   const confirmDelivery = async (id: number) => {
     try {
       await httpService.put(ORDER_API + `/${id}/confirm-delivery`)
-      setOrders((pre) =>
-        pre.map((e) =>
-          e.id === id
-            ? {
-                ...e,
-                orderStatus: Received_Status,
-                reviewDeadline: dayjs().add(15, 'day').toISOString(),
-              }
-            : e,
-        ),
-      )
+      if (data) {
+        const newItems = data.items.map((item) => {
+          if (item.id === id) {
+            item.orderStatus = Received_Status
+            item.reviewDeadline = dayjs().add(15, 'day').toISOString()
+          }
+          return item
+        })
+        mutate({ ...data, items: newItems })
+      }
     } catch (error) {
       message.error(showError(error))
     }
@@ -228,23 +227,25 @@ export default function Purchase() {
                     <div>{formatVND.format(order.amountPaid)}</div>
                   </div>
                   <Divider className="my-2" />
-                  <div className="flex gap-2">
-                    <Image
-                      height={0}
-                      width={0}
-                      sizes="20vw"
-                      alt="sản phẩm"
-                      src={toNextImageLink(order.productOrderDetail.imageUrl)}
-                      className="h-20 w-14 object-contain"
-                    />
-                    <div>
-                      <div className="line-clamp-3">{order.productOrderDetail.productName}</div>
+                  {order.productOrderDetail && (
+                    <div className="flex gap-2">
+                      <Image
+                        height={0}
+                        width={0}
+                        sizes="20vw"
+                        alt="sản phẩm"
+                        src={toNextImageLink(order.productOrderDetail.imageUrl)}
+                        className="h-20 w-14 object-contain"
+                      />
                       <div>
-                        {order.productOrderDetail.quantity} x{' '}
-                        {formatVND.format(order.productOrderDetail.originPrice)}
+                        <div className="line-clamp-3">{order.productOrderDetail.productName}</div>
+                        <div>
+                          {order.productOrderDetail.quantity} x{' '}
+                          {formatVND.format(order.productOrderDetail.originPrice)}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                   <div className="mt-2 text-end gap-2">
                     {order.amountPaid < order.total &&
                       order.orderStatus !== Cancel_Status &&
@@ -270,12 +271,18 @@ export default function Purchase() {
                     {order.orderStatus === Received_Status &&
                     !order.reviewed &&
                     order.receivedDate &&
-                    dayjs(order.reviewDeadline).diff(dayjs(), 'day') >= 0 ? (
+                    dayjs(order.reviewDeadline).diff(dayjs(), 'date') >= 0 ? (
                       <>
                         {dayjs(order.reviewDeadline).diff(dayjs(), 'day') === 0 ? (
-                          <span className="text-xs">
-                            Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'h')} giờ để đánh giá{' '}
-                          </span>
+                          dayjs(order.reviewDeadline).diff(dayjs(), 'h') === 0 ? (
+                            <span className="text-xs">
+                              Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'm')} phút để đánh giá{' '}
+                            </span>
+                          ) : (
+                            <span className="text-xs">
+                              Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'h')} giờ để đánh giá{' '}
+                            </span>
+                          )
                         ) : (
                           <span className="text-xs">
                             Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'day')} ngày để đánh giá{' '}

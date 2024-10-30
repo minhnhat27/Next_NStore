@@ -1,3 +1,8 @@
+export const initPagination: PaginationType = {
+  page: 1,
+  pageSize: 10,
+}
+
 export const initFilters: FilterType = {
   sorter: '0',
   page: 1,
@@ -27,4 +32,5 @@ export const initOrder: OrderType = {
   total: 0,
   paymentMethodName: '',
   orderStatus: 0,
+  voucherDiscount: 0,
 }

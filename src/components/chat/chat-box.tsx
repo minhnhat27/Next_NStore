@@ -106,7 +106,8 @@ export default function ChatBox() {
             <Image
               width={0}
               height={0}
-              sizes="100vw"
+              priority
+              sizes="20vw"
               className="h-14 w-14 rounded-full"
               src="/images/Logo-t-1x1.png"
               alt="logo"
