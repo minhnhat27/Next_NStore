@@ -1,4 +1,9 @@
-type LoginType = {
+type SendOTPType = {
+  email: string
+  type?: number
+}
+
+interface LoginType {
   username: string
   password: string
 }
@@ -6,23 +11,35 @@ type LoginType = {
 type RegisterType = {
   name: string
   email?: string
+  phoneNumber?: string
   token: string
   password: string
 }
 
-type SendOTPType = {
+type ForgetPasswordType = {
+  token: string
   email: string
+  password: string
 }
 
 type VerifyOTPType = {
   email: string
   token: string
+  type?: number
 }
 
-type UserInfoType = {
+interface UserInfoType {
   fullname?: string
   session: string
   provider?: number
+}
+
+interface LoginResType {
+  accessToken: string
+  // refreshToken: string
+  fullName?: string
+  expires: string
+  session: string
 }
 
 type AuthContextType = {
@@ -45,12 +62,4 @@ type AuthActionType = {
 type AuthStateType = {
   isAuthenticated: boolean
   userInfo?: UserInfoType
-}
-
-type LoginResType = {
-  accessToken: string
-  // refreshToken: string
-  fullName?: string
-  expires: string
-  session: string
 }

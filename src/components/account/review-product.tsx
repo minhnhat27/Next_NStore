@@ -83,7 +83,9 @@ const ReviewProduct = ({
             formData.append(`reviews[${i}].${key}`, value.toString())
           }
         })
-        const images = fileList.find((e) => e.productId === item.productId)?.files
+        const images = fileList.find(
+          (e) => e.productId === item.productId && e.variant === item.variant,
+        )?.files
         if (images)
           images.forEach(
             (image) =>

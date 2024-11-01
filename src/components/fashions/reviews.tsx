@@ -248,26 +248,26 @@ export default function Reviews({ product }: Props) {
                         {item.star ? (
                           <span className="text-xs">{rateDesc[item.star - 1]}</span>
                         ) : null}
+                        <div className="text-black">{item.description}</div>
+                        <div className="flex gap-4 mt-2">
+                          {item.imagesUrls.map((url, i) => (
+                            <Image
+                              key={i}
+                              width={0}
+                              height={0}
+                              quality={100}
+                              sizes="20vw"
+                              src={toNextImageLink(url)}
+                              onClick={() => onViewImage(url)}
+                              alt="review"
+                              className="w-24 h-24 object-cover cursor-pointer"
+                            />
+                          ))}
+                        </div>
                       </>
                     }
                   />
                 </Skeleton>
-                {item.description}
-                <div className="flex gap-4 mt-2">
-                  {item.imagesUrls.map((url, i) => (
-                    <Image
-                      key={i}
-                      width={0}
-                      height={0}
-                      quality={100}
-                      sizes="20vw"
-                      src={toNextImageLink(url)}
-                      onClick={() => onViewImage(url)}
-                      alt="review"
-                      className="w-24 h-24 object-cover cursor-pointer"
-                    />
-                  ))}
-                </div>
               </List.Item>
             )}
           />

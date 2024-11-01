@@ -39,7 +39,7 @@ export default function Login() {
   }
 
   const startLoading = () => {
-    setLoading(true)  
+    setLoading(true)
   }
   const stopLoading = () => {
     setLoading(false)
@@ -70,11 +70,11 @@ export default function Login() {
       <Form form={form} disabled={loading} onFinish={handleSubmitLogin}>
         <Form.Item<LoginType>
           name="username"
-          rules={[{ required: true, message: 'Vui lòng nhập Số điện thoại/Email' }]}
+          rules={[{ required: true, message: 'Vui lòng nhập địa chỉ Email' }]}
         >
           <Input
             prefix={<UserOutlined className="text-gray-400" />}
-            placeholder="Số điện thoại/Email"
+            placeholder="Địa chỉ Email"
             size="large"
           />
         </Form.Item>

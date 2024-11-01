@@ -1,6 +1,7 @@
 export enum AuthTypeEnum {
   Register,
-  ChangePassword,
+  ChangeEmail,
+  ForgetPassword,
 }
 
 export enum OrderStatus {

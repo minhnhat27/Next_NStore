@@ -95,11 +95,11 @@ export default function Purchase() {
 
   const mutateReview = (orderId: number) => {
     if (data) {
-      const newItems = data.items.map((item) => {
-        if (item.id === orderId) item.reviewed = true
-        return item
-      })
+      const newItems = data.items.map((item) =>
+        item.id === orderId ? { ...item, reviewed: true } : item,
+      )
       mutate({ ...data, items: newItems })
+      setOrders(newItems)
     }
   }
 
@@ -121,14 +121,17 @@ export default function Purchase() {
     try {
       await httpService.put(ORDER_API + `/${id}/confirm-delivery`)
       if (data) {
-        const newItems = data.items.map((item) => {
-          if (item.id === id) {
-            item.orderStatus = Received_Status
-            item.reviewDeadline = dayjs().add(15, 'day').toISOString()
-          }
-          return item
-        })
+        const newItems = data.items.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                orderStatus: Received_Status,
+                reviewDeadline: dayjs().add(15, 'day').toISOString(),
+              }
+            : item,
+        )
         mutate({ ...data, items: newItems })
+        setOrders(newItems)
       }
     } catch (error) {
       message.error(showError(error))

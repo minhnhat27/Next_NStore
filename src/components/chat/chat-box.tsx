@@ -16,6 +16,7 @@ import {
   UploadProps,
   InputRef,
   App,
+  Skeleton,
 } from 'antd'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -25,7 +26,8 @@ import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr'
 
 type Message = {
   isUser?: boolean
-  message: string
+  content: string
+  createAt?: Date | string
 }
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
@@ -33,6 +35,8 @@ type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
 const storeName = process.env.NEXT_PUBLIC_STORE_NAME
 
 export default function ChatBox() {
+  const [session, setSession] = useState<string | null>(localStorage.getItem('chat'))
+
   const [form] = Form.useForm()
   const [open, setOpen] = useState<boolean>(false)
 
@@ -42,7 +46,10 @@ export default function ChatBox() {
   const { notification } = App.useApp()
 
   const [loading, setLoading] = useState<boolean>(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [chatLoading, setChatLoading] = useState<boolean>(false)
+  const [messages, setMessages] = useState<Message[]>([
+    { content: `Xin chào! ${storeName} rất vui được hỗ trợ bạn.` },
+  ])
   const [quickChat, setQuickChat] = useState<boolean>(false)
 
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -59,6 +66,9 @@ export default function ChatBox() {
   const onStopChat = async () => {
     if (connection) {
       await connection.stop()
+      localStorage.removeItem('chat')
+      setSession(null)
+      setConnection(undefined)
       if (messages.length) setMessages([])
       setFileList([])
       form.resetFields()
@@ -67,12 +77,21 @@ export default function ChatBox() {
     }
   }
 
-  const handleSendMessage: FormProps['onFinish'] = (values) => {
+  const handleSendMessage: FormProps['onFinish'] = async (values) => {
     if (connection) {
-      const m: Message = { ...values, isUser: true }
-      connection.invoke('SendToAdmin', values.message)
+      let newSession = session
+      if (!newSession) {
+        newSession = await connection.invoke('StartChat')
+        if (newSession) {
+          setSession(newSession)
+          localStorage.setItem('chat', newSession)
+        }
+      }
+
+      const m: Message = { ...values, isUser: true, createAt: new Date() }
       setMessages((pre) => [...pre, m])
       form.resetFields()
+      await connection.invoke('SendToAdmin', newSession, values.content)
     }
   }
 
@@ -147,18 +166,23 @@ export default function ChatBox() {
 
       connect.on('onUser', (message) => {
         const mess: Message = {
-          message: message,
+          content: message,
           isUser: false,
+          createAt: new Date(),
         }
-        setMessages((pre) => [...pre, mess])
+        setMessages((pre) => pre.concat(mess))
         setCount((pre) => pre + 1)
       })
 
+      connect.on('CLOSE_CHAT', () => onStopChat())
+
       await connect.start()
-      console.log('SignalR connected')
+      if (session) await connect.invoke('UpdateConnectionId', session)
       setConnection(connect)
 
-      return connect.invoke('GetAdminOnline')
+      const online = await connect.invoke('GetAdminOnline')
+      setOnline(online)
+      return connect
     } catch (err) {
       console.error('SignalR connection error: ', err)
       throw new Error('SignalR connection error')
@@ -168,9 +192,9 @@ export default function ChatBox() {
   const onClickQuickChat = async () => {
     try {
       setLoading(true)
-      const onl: boolean = await connectChat()
-      setOnline(onl)
+      await connectChat()
       setQuickChat(true)
+      setMessages([{ content: `Xin chào! ${storeName} rất vui được hỗ trợ bạn.` }])
     } catch (error) {
       notification.error({
         message: 'Kết nối thất bại',
@@ -211,20 +235,13 @@ export default function ChatBox() {
 
   const quickChatContent = (
     <>
-      {!messages.length && (
+      <div id="content" ref={contentRef} className="overflow-y-auto py-2 flex flex-col h-64">
         <div className="text-center text-xs text-gray-400">
           <div>Bắt đầu trò chuyện nhanh với {storeName}.</div>
           <div>Thông tin của bạn sẽ được ẩn.</div>
         </div>
-      )}
-      <div
-        id="content"
-        ref={contentRef}
-        className={`overflow-y-auto py-2 flex flex-col ${messages.length ? 'h-64' : 'h-56'}`}
-      >
-        <Message message={`Xin chào! ${storeName} rất vui được hỗ trợ bạn.`} />
         {messages.map((m, i) => (
-          <Message key={i} message={m.message} isUser={m.isUser} />
+          <Message key={i} createAt={m.createAt} content={m.content} isUser={m.isUser} />
         ))}
       </div>
       <Divider className="my-2" />
@@ -246,7 +263,7 @@ export default function ChatBox() {
         </div>
       ))}
       <Form form={form} variant="borderless" className="flex gap-1" onFinish={handleSendMessage}>
-        <Form.Item<Message> noStyle name="message" className="flex-1">
+        <Form.Item<Message> noStyle name="content" className="flex-1">
           <Input
             showCount
             maxLength={200}
@@ -256,9 +273,9 @@ export default function ChatBox() {
             placeholder="Nhập tin nhắn, nhấn Enter để gửi..."
           />
         </Form.Item>
-        <Form.Item noStyle dependencies={['message']}>
+        <Form.Item noStyle dependencies={['content']}>
           {({ getFieldValue }) => {
-            const text = getFieldValue('message')?.trim()
+            const text = getFieldValue('content')?.trim()
             return (
               <Button disabled={!text} className="px-1" htmlType="submit" type="link">
                 <SendOutlined className="text-xl" />
@@ -293,11 +310,39 @@ export default function ChatBox() {
     </>
   )
 
+  const onOpenChat = async () => {
+    setOpen(!open)
+    if (!connection && session) {
+      setQuickChat(true)
+      setChatLoading(true)
+      const connect = await connectChat()
+      const res = await connect.invoke('GetConversation', session)
+      const messages = res?.messages ?? []
+      setMessages((pre) => [...pre, ...messages])
+      setChatLoading(false)
+    } else if (connection && session && !quickChat) {
+      setQuickChat(true)
+    }
+  }
+
   return (
     <>
       <Popover
         title={title}
-        content={quickChat ? quickChatContent : content}
+        content={
+          quickChat ? (
+            chatLoading ? (
+              <>
+                <Skeleton avatar active />
+                <Skeleton avatar active />
+              </>
+            ) : (
+              quickChatContent
+            )
+          ) : (
+            content
+          )
+        }
         open={open}
         onOpenChange={() => setCount(0)}
         trigger="click"
@@ -310,7 +355,7 @@ export default function ChatBox() {
         }}
       >
         <FloatButton
-          onClick={() => setOpen(!open)}
+          onClick={onOpenChat}
           className="h-12 w-12"
           icon={<CommentOutlined className="text-xl text-sky-500" />}
           badge={{ count }}

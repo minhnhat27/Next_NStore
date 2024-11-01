@@ -49,22 +49,20 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
   const nextFormState = () =>
     setFormState(formState < Object.keys(ChangeEmailState).length - 1 ? formState + 1 : formState)
 
-  const handleCheckPassword = async (password: { password: string }) => {
+  const handleCheckPassword = async (password: string) => {
     try {
-      await httpService.post(AUTH_API + '/check-password', password)
+      await httpService.post(AUTH_API + '/check-password', { password })
       nextFormState()
     } catch (error) {
       form.setFields([{ name: 'password', errors: [showError(error)] }])
     }
   }
 
-  const handleSendOTP = async (email: { email: string }) => {
+  const handleSendOTP = async (email: string) => {
     try {
-      await httpService.post(AUTH_API + '/send-otp', {
-        ...email,
-        type: AuthTypeEnum.ChangePassword,
-      })
-      setNewEmail(email.email)
+      const data = { email, type: AuthTypeEnum.ChangeEmail }
+      await httpService.post(AUTH_API + '/send-otp', data)
+      setNewEmail(email)
       nextFormState()
     } catch (error) {
       form.setFields([{ name: 'email', errors: [showError(error)] }])
@@ -74,15 +72,16 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
   const handleResend = () => {
     if (newEmail) {
       setCountdown(60)
-      handleSendOTP({ email: newEmail })
+      handleSendOTP(newEmail)
       form.setFieldValue('token', undefined)
     } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
   }
 
-  const handleChangeEmail = async (token: { token: string }) => {
+  const handleChangeEmail = async (token: string) => {
     try {
       if (newEmail) {
-        await httpService.put(AUTH_API + '/change-email', { email: newEmail, ...token })
+        const data = { email: newEmail, token }
+        await httpService.put(AUTH_API + '/change-email', data)
         setOpen(false)
         resetFormState()
         mutate_info({ ...info, email: maskEmail(newEmail) })
@@ -101,14 +100,14 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
     setLoading(true)
     switch (formState) {
       case ChangeEmailState.CHECK_PASSWORD:
-        await handleCheckPassword(values)
+        await handleCheckPassword(values.password)
         break
       case ChangeEmailState.NEW_EMAIL:
-        await handleSendOTP(values)
+        await handleSendOTP(values.email)
         setCountdown(60)
         break
       case ChangeEmailState.OTP_CONFIRM:
-        await handleChangeEmail(values)
+        await handleChangeEmail(values.token)
         break
     }
     setLoading(false)
