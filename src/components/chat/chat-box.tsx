@@ -1,6 +1,12 @@
 'use client'
 
-import { CloseOutlined, CommentOutlined, PaperClipOutlined, SendOutlined } from '@ant-design/icons'
+import {
+  CloseCircleOutlined,
+  CloseOutlined,
+  CommentOutlined,
+  PaperClipOutlined,
+  SendOutlined,
+} from '@ant-design/icons'
 import {
   Button,
   Divider,
@@ -18,8 +24,8 @@ import {
   App,
   Skeleton,
 } from 'antd'
-import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import NextImage from 'next/image'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getBase64 } from '~/utils/common'
 import Message from '../ui/message'
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr'
@@ -27,7 +33,18 @@ import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr'
 type Message = {
   isUser?: boolean
   content: string
-  createAt?: Date | string
+  createAt?: string
+  image?: string
+}
+
+type Conversations = {
+  unread: number
+  messages: Message[]
+  closed: boolean
+}
+
+type GroupedMessages = {
+  [key: string]: Message[]
 }
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
@@ -35,7 +52,7 @@ type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
 const storeName = process.env.NEXT_PUBLIC_STORE_NAME
 
 export default function ChatBox() {
-  const [session, setSession] = useState<string | null>(localStorage.getItem('chat'))
+  const [session, setSession] = useState<string | null>(() => localStorage.getItem('chat'))
 
   const [form] = Form.useForm()
   const [open, setOpen] = useState<boolean>(false)
@@ -43,13 +60,11 @@ export default function ChatBox() {
   const inputRef = useRef<InputRef>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  const { notification } = App.useApp()
+  const { notification, message } = App.useApp()
 
   const [loading, setLoading] = useState<boolean>(false)
   const [chatLoading, setChatLoading] = useState<boolean>(false)
-  const [messages, setMessages] = useState<Message[]>([
-    { content: `Xin chào! ${storeName} rất vui được hỗ trợ bạn.` },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [quickChat, setQuickChat] = useState<boolean>(false)
 
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -60,20 +75,99 @@ export default function ChatBox() {
   const [online, setOnline] = useState<boolean>(false)
 
   const [count, setCount] = useState<number>(0)
+  const [hasFetched, setHasFetched] = useState<boolean>(false)
 
   const handleZaloChat = () => (window.location.href = 'zalo://conversation?phone=0358103707')
 
-  const onStopChat = async () => {
-    if (connection) {
+  const groupMessagesByDate = useMemo(() => {
+    if (!messages) {
+      return {} as GroupedMessages
+    }
+    return messages.reduce((pre: GroupedMessages, message) => {
+      const dateKey = message.createAt ? message.createAt.split('T')[0] : 'unknown_date'
+      if (!pre[dateKey]) {
+        pre[dateKey] = []
+      }
+      pre[dateKey].push(message)
+      return pre
+    }, {})
+  }, [messages])
+
+  const onStopChat = async (adminClose: boolean = false) => {
+    if (connection && !adminClose) {
+      if (session) {
+        await connection.invoke('CloseChat', session)
+      }
       await connection.stop()
-      localStorage.removeItem('chat')
-      setSession(null)
-      setConnection(undefined)
-      if (messages.length) setMessages([])
-      setFileList([])
-      form.resetFields()
-      setQuickChat(false)
-      setOnline(false)
+    }
+    localStorage.removeItem('chat')
+    setSession(null)
+    setConnection(undefined)
+    setCount(0)
+    if (messages.length) setMessages([])
+    setFileList([])
+    form.resetFields()
+    setQuickChat(false)
+    setOnline(false)
+  }
+
+  const compressImage = (file: any): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const reader = new FileReader()
+
+      reader.onload = (e) => {
+        img.src = e.target?.result as string
+      }
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d') as any
+
+        const MAX_WIDTH = 720
+        const MAX_HEIGHT = 720
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height
+            height = MAX_HEIGHT
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob)
+          },
+          'image/jpeg',
+          0.3,
+        )
+      }
+
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const beforeUpload = async (file: File) => {
+    const isImage = file.type.startsWith('image/')
+    if (!isImage) {
+      message.error('Chỉ được tải lên ảnh!')
+      return Upload.LIST_IGNORE
+    }
+
+    const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+    if (file.size > maxSizeInBytes) {
+      message.error('Kích thước ảnh không vượt quá 2MB!')
+      return Upload.LIST_IGNORE
     }
   }
 
@@ -88,10 +182,20 @@ export default function ChatBox() {
         }
       }
 
-      const m: Message = { ...values, isUser: true, createAt: new Date() }
+      const image = fileList.length
+        ? await getBase64(await compressImage(fileList[0].originFileObj))
+        : null
+
+      const m: Message = {
+        ...values,
+        isUser: true,
+        createAt: new Date().toISOString(),
+        image,
+      }
       setMessages((pre) => [...pre, m])
       form.resetFields()
-      await connection.invoke('SendToAdmin', newSession, values.content)
+      setFileList([])
+      await connection.invoke('SendToAdmin', newSession, values.content, image)
     }
   }
 
@@ -110,19 +214,84 @@ export default function ChatBox() {
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight
-      inputRef.current?.focus({
+    }
+    if (inputRef.current)
+      inputRef.current.focus({
         cursor: 'start',
       })
-    }
     if (open) setCount(0)
   }, [messages, open])
+
+  const connectChat = async () => {
+    try {
+      const connect = new HubConnectionBuilder()
+        .withUrl(process.env.NEXT_PUBLIC_API_URL + '/chat')
+        .withAutomaticReconnect()
+        .build()
+
+      connect.on('onUser', (message, image) => {
+        const mess: Message = {
+          content: message,
+          isUser: false,
+          createAt: new Date().toISOString(),
+          image,
+        }
+        setMessages((pre) => pre.concat(mess))
+        setCount((pre) => pre + 1)
+      })
+
+      connect.on('CLOSE_CHAT', () => onStopChat(true))
+
+      await connect.start()
+      if (session) await connect.invoke('UpdateConnectionId', session)
+      setConnection(connect)
+
+      const online = await connect.invoke('GetAdminOnline')
+      setOnline(online)
+      return { connect, online }
+    } catch (err) {
+      console.error('SignalR connection error: ', err)
+      throw new Error('SignalR connection error')
+    }
+  }
+
+  const onClickQuickChat = async () => {
+    try {
+      setLoading(true)
+      let content: Message[] = [
+        {
+          content: `Xin chào! ${storeName} rất vui được hỗ trợ bạn.`,
+          createAt: new Date().toISOString(),
+        },
+      ]
+      if (!connection) {
+        const { online: onl } = await connectChat()
+        if (!onl) {
+          content.push({
+            content: `Hiện tại không có nhân viên đang truy cập! Bạn vui lòng để lại thông tin liên hệ để chúng tôi có thể hỗ trợ bạn tốt nhất!`,
+            createAt: new Date().toISOString(),
+          })
+        }
+      }
+      setQuickChat(true)
+      setMessages(content)
+    } catch (error) {
+      notification.error({
+        message: 'Kết nối thất bại',
+        description: `Không thể kết nối với ${storeName}`,
+        className: 'text-red-500',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const title = (
     <>
       <div className="h-20 ps-2 pb-2 flex justify-between border-b">
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <Image
+          <div className="relative shrink-0">
+            <NextImage
               width={0}
               height={0}
               priority
@@ -144,7 +313,7 @@ export default function ChatBox() {
         </div>
         <div className="flex gap-1 items-center">
           {quickChat && (
-            <Button type="link" onClick={onStopChat}>
+            <Button type="link" onClick={() => onStopChat()}>
               Kết thúc
             </Button>
           )}
@@ -156,55 +325,6 @@ export default function ChatBox() {
       </div>
     </>
   )
-
-  const connectChat = async () => {
-    try {
-      const connect = new HubConnectionBuilder()
-        .withUrl(process.env.NEXT_PUBLIC_API_URL + '/chat')
-        .withAutomaticReconnect()
-        .build()
-
-      connect.on('onUser', (message) => {
-        const mess: Message = {
-          content: message,
-          isUser: false,
-          createAt: new Date(),
-        }
-        setMessages((pre) => pre.concat(mess))
-        setCount((pre) => pre + 1)
-      })
-
-      connect.on('CLOSE_CHAT', () => onStopChat())
-
-      await connect.start()
-      if (session) await connect.invoke('UpdateConnectionId', session)
-      setConnection(connect)
-
-      const online = await connect.invoke('GetAdminOnline')
-      setOnline(online)
-      return connect
-    } catch (err) {
-      console.error('SignalR connection error: ', err)
-      throw new Error('SignalR connection error')
-    }
-  }
-
-  const onClickQuickChat = async () => {
-    try {
-      setLoading(true)
-      await connectChat()
-      setQuickChat(true)
-      setMessages([{ content: `Xin chào! ${storeName} rất vui được hỗ trợ bạn.` }])
-    } catch (error) {
-      notification.error({
-        message: 'Kết nối thất bại',
-        description: `Không thể kết nối với ${storeName}`,
-        className: 'text-red-500',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const content = (
     <>
@@ -234,20 +354,36 @@ export default function ChatBox() {
   )
 
   const quickChatContent = (
-    <>
-      <div id="content" ref={contentRef} className="overflow-y-auto py-2 flex flex-col h-64">
+    <div className="h-80 flex flex-col">
+      <div id="content" ref={contentRef} className="overflow-y-auto py-2 flex flex-col flex-1">
         <div className="text-center text-xs text-gray-400">
           <div>Bắt đầu trò chuyện nhanh với {storeName}.</div>
           <div>Thông tin của bạn sẽ được ẩn.</div>
         </div>
-        {messages.map((m, i) => (
-          <Message key={i} createAt={m.createAt} content={m.content} isUser={m.isUser} />
+        {Object.keys(groupMessagesByDate).map((date, i) => (
+          <div key={i}>
+            <Divider plain className="italic" style={{ fontSize: 12 }}>
+              {date}
+            </Divider>
+            {groupMessagesByDate[date]?.map((e, i) => (
+              <Message
+                key={i}
+                content={e.content}
+                isUser={e.isUser}
+                createAt={e.createAt}
+                image={e.image}
+              />
+            ))}
+          </div>
         ))}
+        {/* {messages.map((m, i) => (
+          <Message key={i} createAt={m.createAt} content={m.content} isUser={m.isUser} />
+        ))} */}
       </div>
       <Divider className="my-2" />
       {fileList.map((file, i) => (
         <div key={i} className="relative cursor-pointer select-none w-fit m-1 group">
-          <Image
+          <NextImage
             width={0}
             height={0}
             sizes="10vw"
@@ -256,9 +392,9 @@ export default function ChatBox() {
             src={file.originFileObj ? URL.createObjectURL(file.originFileObj) : ''}
             alt={file.name}
           />
-          <CloseOutlined
+          <CloseCircleOutlined
             onClick={() => setFileList((pre) => pre.filter((e) => e.uid !== file.uid))}
-            className="hidden group-hover:block absolute -top-2 -right-2 bg-white font-bold rounded-full text-[0.65rem] p-[0.15rem] border"
+            className="hidden group-hover:block absolute -top-1 -right-1 bg-white rounded-full hover:bg-gray-200"
           />
         </div>
       ))}
@@ -284,6 +420,7 @@ export default function ChatBox() {
           }}
         </Form.Item>
         <Upload
+          beforeUpload={beforeUpload}
           fileList={fileList}
           listType="picture"
           maxCount={1}
@@ -307,23 +444,53 @@ export default function ChatBox() {
           />
         )}
       </Form>
-    </>
+    </div>
   )
 
   const onOpenChat = async () => {
     setOpen(!open)
-    if (!connection && session) {
+    if (session && !hasFetched) {
       setQuickChat(true)
       setChatLoading(true)
-      const connect = await connectChat()
-      const res = await connect.invoke('GetConversation', session)
-      const messages = res?.messages ?? []
-      setMessages((pre) => [...pre, ...messages])
+      let newConnect: HubConnection | undefined = connection
+      if (!connection) {
+        const { connect } = await connectChat()
+        newConnect = connect
+      }
+      if (newConnect) {
+        const res: Conversations = await newConnect.invoke('GetConversation', session)
+        if (!res) {
+          localStorage.removeItem('chat')
+          setSession(null)
+          setQuickChat(false)
+        } else {
+          const messages = res.messages ?? []
+          setMessages((pre) => pre.concat(messages))
+        }
+        setHasFetched(true)
+      }
       setChatLoading(false)
-    } else if (connection && session && !quickChat) {
+    }
+
+    if (connection && session && !quickChat) {
       setQuickChat(true)
     }
   }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (session) {
+          const { connect } = await connectChat()
+          const unread: number = await connect.invoke('GetUnread', session)
+          setCount(unread)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchData()
+  }, [session])
 
   return (
     <>
@@ -350,12 +517,12 @@ export default function ChatBox() {
           marginRight: '0.5rem',
           width: '26rem',
           maxWidth: '96vw',
-          height: '26rem',
+          minHeight: '27rem',
           maxHeight: '102vh',
         }}
       >
         <FloatButton
-          onClick={onOpenChat}
+          onClick={() => onOpenChat()}
           className="h-12 w-12"
           icon={<CommentOutlined className="text-xl text-sky-500" />}
           badge={{ count }}

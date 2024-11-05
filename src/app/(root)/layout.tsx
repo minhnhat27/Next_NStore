@@ -6,6 +6,7 @@ import Loading from './loading'
 
 import viVN from 'antd/locale/vi_VN'
 import BackTop from '~/components/ui/back-top'
+import ChatBox from '~/components/chat/chat-box'
 
 export default async function RootLayout({
   children,
@@ -23,6 +24,7 @@ export default async function RootLayout({
         </Suspense>
         <Footer />
         <BackTop />
+        <ChatBox />
       </Layout>
     </ConfigProvider>
   )

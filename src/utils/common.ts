@@ -113,7 +113,7 @@ export const formatDateTime = (value: string | Date) => {
     .replaceAll('/', '-')
 }
 
-export const getTimeHHmm = (value?: string | Date) => {
+export const getTimeHHmm = (value?: string) => {
   const date = value ? new Date(value) : new Date()
 
   return date.toLocaleString('vi-VN', {

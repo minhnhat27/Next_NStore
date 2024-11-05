@@ -8,7 +8,6 @@ import { AntdRegistry } from '@ant-design/nextjs-registry'
 import dynamic from 'next/dynamic'
 import { App } from 'antd'
 import FavoriteProvider from '~/providers/favorite-provider'
-import ChatBox from '~/components/chat/chat-box'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const inter = Inter({ subsets: ['vietnamese'] })
@@ -48,10 +47,7 @@ export default async function RootLayout({
             <AntdRegistry>
               <AntdStyleProvider>
                 <App>
-                  <FavoriteProvider>
-                    {children}
-                    <ChatBox />
-                  </FavoriteProvider>
+                  <FavoriteProvider>{children}</FavoriteProvider>
                 </App>
               </AntdStyleProvider>
             </AntdRegistry>
