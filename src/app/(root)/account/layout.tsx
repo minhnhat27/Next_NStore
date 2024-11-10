@@ -25,7 +25,7 @@ export default async function Profile({ children }: { children: React.ReactNode 
       <BreadcrumbLink items={breadcrumbItems} />
       <Layout className="bg-white space-x-4">
         <SiderMenu />
-        <Layout className="bg-white border rounded-lg drop-shadow min-h-[calc(100vh-10rem)] h-fit p-4">
+        <Layout className="bg-white border rounded-lg drop-shadow min-h-[calc(100vh-10rem)] h-fit px-4">
           {children}
         </Layout>
       </Layout>

@@ -23,6 +23,7 @@ interface ProductType {
   gender: number
   sold: number
   discountPercent: number
+  flashSaleDiscountPercent: number
   price: number
   categoryName: string
   brandName: string
@@ -68,6 +69,7 @@ interface ProductDetailsType extends ProductType {
   materialNames: string[]
   imageUrls: string[]
   description?: string
+  endFlashSale: string
 }
 
 interface VNPayCallback {
@@ -92,4 +94,9 @@ interface PayOSCallback {
   cancel: string
   status: string
   orderCode: string
+}
+
+interface FlashSaleResponse {
+  endFlashSale: string
+  products: ProductType[]
 }

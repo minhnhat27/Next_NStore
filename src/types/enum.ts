@@ -12,6 +12,7 @@ export enum OrderStatus {
   'Đang giao hàng',
   'Đã nhận hàng',
   'Đã hủy',
+  'Tất cả',
 }
 
 export enum OrderStatusColor {

@@ -3,9 +3,6 @@ import { Metadata } from 'next'
 import BreadcrumbLink from '~/components/ui/breadcrumb'
 import Details from '../../../../components/fashions/product-details'
 import { notFound } from 'next/navigation'
-import httpService from '~/lib/http-service'
-import { PRODUCT_API } from '~/utils/api-urls'
-import { Button, Result } from 'antd'
 
 export const revalidate = 360
 
@@ -44,34 +41,30 @@ export async function generateMetadata({ searchParams }: IProps): Promise<Metada
   }
 }
 
-const API_URL = process.env.API_URL
+// const API_URL = process.env.API_URL
 
-const getProduct = async (id: number): Promise<ProductDetailsType | undefined> => {
-  try {
-    const data = await httpService.get(`${API_URL}${PRODUCT_API}/${id}`)
-    return data
-  } catch (error) {
-    return undefined
-  }
-}
+// const getProduct = async (id: number): Promise<ProductDetailsType | undefined> => {
+//   try {
+//     const data = await httpService.get(`${API_URL}${PRODUCT_API}/${id}`)
+//     return data
+//   } catch (error) {
+//     return undefined
+//   }
+// }
 
 export default async function ProductDetails({ params, searchParams }: IProps) {
   const id = parseInt(params.id)
-  // const router
-  // console.log(id)
-
   if (isNaN(id) || !id) return notFound()
 
-  const product = await getProduct(id)
-
-  if (!product) return <Result status={404} title="Không tìm thấy sản phẩm" />
+  // const product = await getProduct(id)
+  // if (!product) return <Result status={404} title="Không tìm thấy sản phẩm" />
 
   return (
     <div className="p-4 space-y-4">
       <BreadcrumbLink
         items={breadcrumbItems(searchParams.name?.toString() ?? 'Chi tiết sản phẩm')}
       />
-      <Details product={product} />
+      <Details id={id} />
     </div>
   )
 }

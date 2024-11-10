@@ -16,6 +16,7 @@ export const initProduct: ProductType = {
   gender: 0,
   sold: 0,
   discountPercent: 0,
+  flashSaleDiscountPercent: 0,
   price: 0,
   categoryName: '',
   brandName: '',

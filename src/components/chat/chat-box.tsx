@@ -26,7 +26,7 @@ import {
 } from 'antd'
 import NextImage from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getBase64 } from '~/utils/common'
+import { compressImage, formatDate, getBase64 } from '~/utils/common'
 import Message from '../ui/message'
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr'
 
@@ -84,7 +84,7 @@ export default function ChatBox() {
       return {} as GroupedMessages
     }
     return messages.reduce((pre: GroupedMessages, message) => {
-      const dateKey = message.createAt ? message.createAt.split('T')[0] : 'unknown_date'
+      const dateKey = message.createAt ? formatDate(message.createAt) : 'unknown_date'
       if (!pre[dateKey]) {
         pre[dateKey] = []
       }
@@ -111,52 +111,6 @@ export default function ChatBox() {
     setOnline(false)
   }
 
-  const compressImage = (file: any): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      const reader = new FileReader()
-
-      reader.onload = (e) => {
-        img.src = e.target?.result as string
-      }
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d') as any
-
-        const MAX_WIDTH = 720
-        const MAX_HEIGHT = 720
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width
-            width = MAX_WIDTH
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height
-            height = MAX_HEIGHT
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        ctx.drawImage(img, 0, 0, width, height)
-        canvas.toBlob(
-          (blob) => {
-            resolve(blob)
-          },
-          'image/jpeg',
-          0.3,
-        )
-      }
-
-      reader.readAsDataURL(file)
-    })
-  }
-
   const beforeUpload = async (file: File) => {
     const isImage = file.type.startsWith('image/')
     if (!isImage) {
@@ -172,30 +126,38 @@ export default function ChatBox() {
   }
 
   const handleSendMessage: FormProps['onFinish'] = async (values) => {
-    if (connection) {
-      let newSession = session
-      if (!newSession) {
-        newSession = await connection.invoke('StartChat')
-        if (newSession) {
-          setSession(newSession)
-          localStorage.setItem('chat', newSession)
+    try {
+      if (connection) {
+        let newSession = session
+        if (!newSession) {
+          newSession = await connection.invoke('StartChat')
+          if (newSession) {
+            setSession(newSession)
+            localStorage.setItem('chat', newSession)
+          }
         }
-      }
 
-      const image = fileList.length
-        ? await getBase64(await compressImage(fileList[0].originFileObj))
-        : null
+        let image = null
 
-      const m: Message = {
-        ...values,
-        isUser: true,
-        createAt: new Date().toISOString(),
-        image,
+        if (fileList.length) {
+          image = await compressImage(fileList[0].originFileObj)
+          if (!image) message.error('Ảnh quá lớn không thể gửi ảnh')
+        }
+
+        const m: Message = {
+          ...values,
+          isUser: true,
+          createAt: new Date().toISOString(),
+          image,
+        }
+        form.resetFields()
+        setFileList([])
+        await connection.invoke('SendToAdmin', newSession, values.content, image)
+        setMessages((pre) => [...pre, m])
       }
-      setMessages((pre) => [...pre, m])
-      form.resetFields()
-      setFileList([])
-      await connection.invoke('SendToAdmin', newSession, values.content, image)
+    } catch (error) {
+      console.log(error)
+      message.error('Có lỗi xảy ra. Không thể gửi tin nhắn!')
     }
   }
 
@@ -362,7 +324,7 @@ export default function ChatBox() {
         </div>
         {Object.keys(groupMessagesByDate).map((date, i) => (
           <div key={i}>
-            <Divider plain className="italic" style={{ fontSize: 12 }}>
+            <Divider plain style={{ fontSize: 12 }}>
               {date}
             </Divider>
             {groupMessagesByDate[date]?.map((e, i) => (
@@ -491,6 +453,19 @@ export default function ChatBox() {
     }
     fetchData()
   }, [session])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (connection && open && session) {
+          await connection.invoke('ReadMessage', session)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchData()
+  }, [messages])
 
   return (
     <>

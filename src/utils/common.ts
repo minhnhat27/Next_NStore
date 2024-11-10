@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { OrderStatus } from '~/types/enum'
 
 export const formatVND = new Intl.NumberFormat('vi', {
@@ -86,17 +87,7 @@ export const toNextImageLink = (url: string | undefined): string =>
 export const shippingPrice = (price: number): number =>
   price >= 400000 || price === 0 ? 0 : price >= 200000 ? 10000 : 30000
 
-export const formatDate = (value: string | Date) => {
-  const date = new Date(value)
-
-  return date
-    .toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-    .replaceAll('/', '-')
-}
+export const formatDate = (value: string | Date) => dayjs(value).format('DD-MM-YYYY')
 
 export const formatDateTime = (value: string | Date) => {
   const date = new Date(value)
@@ -147,6 +138,65 @@ export const getBase64 = (file: any): Promise<string> =>
     reader.readAsDataURL(file)
     reader.onload = () => resolve(reader.result as string)
     reader.onerror = (error) => reject(error)
+  })
+
+export const compressImage = (file: any) =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      img.src = e.target?.result as string
+    }
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d') as any
+
+      const MAX_WIDTH = 480
+      const MAX_HEIGHT = 480
+      let width = img.width
+      let height = img.height
+
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        if (width / MAX_WIDTH > height / MAX_HEIGHT) {
+          height *= MAX_WIDTH / width
+          width = MAX_WIDTH
+        } else {
+          width *= MAX_HEIGHT / height
+          height = MAX_HEIGHT
+        }
+      }
+
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, 0, 0, width, height)
+
+      let quality = 1
+      const MAX_SIZE = 24 * 1024
+
+      const checkSizeAndCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size <= MAX_SIZE) {
+              const reader = new FileReader()
+              reader.onloadend = () => {
+                resolve(reader.result)
+              }
+              reader.readAsDataURL(blob)
+            } else if (quality > 0.1) {
+              quality -= 0.1
+              checkSizeAndCompress()
+            } else {
+              resolve(null)
+            }
+          },
+          'image/jpeg',
+          quality,
+        )
+      }
+      checkSizeAndCompress()
+    }
+    reader.onerror = (error) => reject(error)
+    reader.readAsDataURL(file)
   })
 
 export const formatCount = (num: number) => {

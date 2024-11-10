@@ -1,18 +1,10 @@
 'use client'
 
-import {
-  DeleteFilled,
-  DropboxOutlined,
-  InfoCircleFilled,
-  InfoCircleOutlined,
-} from '@ant-design/icons'
+import { DeleteFilled, DropboxOutlined, InfoCircleFilled } from '@ant-design/icons'
 import {
   App,
   Button,
-  Checkbox,
-  CheckboxProps,
   Divider,
-  Flex,
   InputNumber,
   Popconfirm,
   Radio,
@@ -23,6 +15,7 @@ import {
   Steps,
   Table,
   TableProps,
+  Tag,
 } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { formatVND, shippingPrice, showError, toNextImageLink } from '~/utils/common'
@@ -39,40 +32,21 @@ import useSWRImmutable from 'swr/immutable'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
 import useSWR, { mutate } from 'swr'
+import { initPagination } from '~/utils/initType'
 
 interface IProps {
   paymentMethods: PaymentMethod[]
 }
 
 const columns = (
-  checkedItems: CartItemsType[],
   cartItems: CartItemsType[],
-  onCheckCartItems: (item: CartItemsType) => void,
-  onCheckAllChange: CheckboxProps['onChange'],
   onChangeQuantity: (item: CartItemsType, value: number | null) => Promise<void>,
   onChangeSize: (item: CartItemsType, value: number) => Promise<void>,
   handleDeleteCartItem: (id: string) => void,
-  hanldeChangeQuantity: debounce.DebouncedFunction<
+  handleChangeQuantity: debounce.DebouncedFunction<
     (item: CartItemsType, value: number | null) => Promise<void>
   >,
 ): TableProps<CartItemsType>['columns'] => [
-  {
-    title: (
-      <Checkbox
-        key="checkall"
-        checked={cartItems.length === checkedItems.length}
-        indeterminate={checkedItems.length > 0 && checkedItems.length < cartItems.length}
-        onChange={onCheckAllChange}
-      />
-    ),
-    className: 'px-2',
-    render: (_, item) => (
-      <Checkbox
-        onChange={() => onCheckCartItems(item)}
-        checked={checkedItems.some((e) => e.id === item.id)}
-      />
-    ),
-  },
   {
     title: 'Sản phẩm',
     dataIndex: 'imageUrl',
@@ -93,18 +67,25 @@ const columns = (
   },
   {
     dataIndex: 'productName',
-    render: (value) => <div className="min-w-16 line-clamp-2">{value}</div>,
+    render: (name, item) => (
+      <Link href={{ pathname: `/fashions/${item.productId}`, query: { name } }}>
+        <div className="min-w-16 line-clamp-2 text-gray-700">{name}</div>
+      </Link>
+    ),
   },
   {
     title: 'Phân loại',
     dataIndex: 'colorName',
     align: 'center',
-    render: (value, item) => (
-      <div className="font-semibold text-gray-500 flex justify-end items-center text-nowrap">
-        <span>{value} - </span>
-        <ChooseSize cartItems={cartItems} item={item} onChangeSize={onChangeSize} />
-      </div>
-    ),
+    render: (value, item) =>
+      value ? (
+        <div className="font-semibold text-gray-500 flex justify-end items-center text-nowrap">
+          <span>{value} - </span>
+          <ChooseSize cartItems={cartItems} item={item} onChangeSize={onChangeSize} />
+        </div>
+      ) : (
+        <div className="text-xs text-red-500">Phân loại không tồn tại</div>
+      ),
   },
   {
     title: 'Đơn giá',
@@ -116,6 +97,11 @@ const columns = (
           <div className="line-through text-gray-400">{formatVND.format(item.originPrice)}</div>
         )}
         <div className="font-semibold"> {formatVND.format(price)}</div>
+        {item.hasFlashSale && (
+          <Tag color="#ef4444" className="m-0 py-0 animate-pulse">
+            Flash sale
+          </Tag>
+        )}
       </>
     ),
   },
@@ -123,29 +109,36 @@ const columns = (
     title: 'Số lượng',
     dataIndex: 'quantity',
     align: 'center',
-    render: (quantity, item) => (
-      <InputNumber
-        className="w-16 rounded-sm"
-        min={1}
-        max={item.sizeInStocks.find((e) => e.sizeId === item?.sizeId)?.inStock}
-        value={quantity}
-        onChange={(value) => {
-          onChangeQuantity(item, value)
-          hanldeChangeQuantity(item, value)
-        }}
-      />
-    ),
+    render: (quantity, item) =>
+      item.inStock ? (
+        <InputNumber
+          className="w-16 rounded-sm"
+          min={1}
+          disabled={!item.colorId || !item.sizeId}
+          max={item.inStock}
+          value={quantity}
+          onChange={(value) => {
+            onChangeQuantity(item, value)
+            handleChangeQuantity(item, value)
+          }}
+        />
+      ) : (
+        <div className="text-xs text-red-500">Sản phẩm đã hết hàng</div>
+      ),
   },
   {
     title: 'Tổng',
     dataIndex: 'price',
     align: 'center',
     className: 'w-36',
-    render: (price, item) => (
-      <div className="text-red-600 text-lg font-semibold p-1">
-        {formatVND.format(price * item.quantity)}
-      </div>
-    ),
+    render: (price, item) =>
+      item.inStock ? (
+        <div className="text-red-600 text-lg font-semibold p-1">
+          {formatVND.format(price * item.quantity)}
+        </div>
+      ) : (
+        '_'
+      ),
   },
   {
     title: 'Thao tác',
@@ -155,7 +148,7 @@ const columns = (
       <Popconfirm
         okButtonProps={{ danger: true }}
         onConfirm={() => handleDeleteCartItem(id)}
-        title="Xóa sản phẩm này"
+        title="Xóa khỏi giỏ hàng?"
         key="delete"
       >
         <Button type="text" className="text-red-500 hover:text-red-400 px-3" key="delete">
@@ -193,8 +186,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
   const session = state.userInfo?.session
 
   const router = useRouter()
-
-  const { notification, modal } = App.useApp()
+  const { notification, modal, message } = App.useApp()
 
   const [cartItems, setCartItems] = useState<CartItemsType[]>([])
   const [checkedItems, setCheckedItems] = useState<CartItemsType[]>([])
@@ -207,6 +199,15 @@ export default function CartDetails({ paymentMethods }: IProps) {
   )
 
   const onChangePaymentMethod = (e: RadioChangeEvent) => setPaymentMethodId(e.target.value)
+
+  const rowSelection: TableProps<CartItemsType>['rowSelection'] = {
+    onChange: (_, selectedRows: CartItemsType[]) => {
+      setCheckedItems(selectedRows)
+    },
+    getCheckboxProps: (record: CartItemsType) => ({
+      disabled: !record.colorId || !record.inStock || !record.sizeId,
+    }),
+  }
 
   const {
     data,
@@ -284,7 +285,9 @@ export default function CartDetails({ paymentMethods }: IProps) {
   )
 
   useEffect(() => {
-    if (data) setCartItems(data)
+    if (data) {
+      setCartItems(data)
+    }
   }, [data])
 
   useEffect(() => {
@@ -319,12 +322,12 @@ export default function CartDetails({ paymentMethods }: IProps) {
     await handleUpdateCartItem(item.id, dataUpdate)
 
     const updatedCart = cartItems.map((e) =>
-      e.id === item.id ? { ...e, sizeId: newSizeId, quantity: newQuantity } : e,
+      e.id === item.id ? { ...e, sizeId: newSizeId, quantity: newQuantity, inStock } : e,
     )
     setCartItems(updatedCart)
   }
 
-  const hanldeChangeQuantity = useCallback(
+  const handleChangeQuantity = useCallback(
     debounce(async (item: CartItemsType, value: number | null): Promise<void> => {
       if (value) {
         const dataUpdate: UpdateCartItem = {
@@ -348,20 +351,6 @@ export default function CartDetails({ paymentMethods }: IProps) {
       })
       setCartItems(updatedCart)
     }
-  }
-
-  const onCheckAllChange: CheckboxProps['onChange'] = (e) => {
-    if (cartItems && e.target.checked) setCheckedItems(cartItems)
-    else setCheckedItems([])
-  }
-
-  const onCheckCartItems = (item: CartItemsType) => {
-    const exist = checkedItems.find((e) => e.id === item.id)
-    const newList = exist
-      ? checkedItems.filter((e) => !(e.id === item.id))
-      : [...checkedItems, item]
-
-    setCheckedItems(newList)
   }
 
   const handleDeleteCartItem = async (id: string) => {
@@ -421,6 +410,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
       const hasEmptyField = !address || (address && Object.values(address).some((value) => !value))
 
       if (hasEmptyField) {
+        message.error('Vui lòng chọn địa chỉ giao hàng!')
         setAddressError(true)
         return
       }
@@ -450,6 +440,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
         const url = await createOrderTrigger(order)
         // const url = await httpService.post(ORDER_API, order)
         mutate([`${CART_API}/count`, state.userInfo?.session])
+        mutate([ORDER_API, state.userInfo?.session, initPagination])
 
         const paymentMethodName = paymentMethods.find((e) => e.id === paymentMethodId)?.name
 
@@ -515,15 +506,13 @@ export default function CartDetails({ paymentMethods }: IProps) {
             <div className="px-2 border">
               <Table
                 dataSource={cartItems}
+                rowSelection={{ type: 'checkbox', ...rowSelection }}
                 columns={columns(
-                  checkedItems,
                   cartItems,
-                  onCheckCartItems,
-                  onCheckAllChange,
                   onChangeQuantity,
                   onChangeSize,
                   handleDeleteCartItem,
-                  hanldeChangeQuantity,
+                  handleChangeQuantity,
                 )}
                 className="overflow-x-auto"
                 pagination={false}
@@ -657,7 +646,10 @@ export default function CartDetails({ paymentMethods }: IProps) {
               }
               loading={isMutatingCreateOrder}
               disabled={
-                checkedItems.length <= 0 || addressError || paymentMethods.every((e) => !e.isActive)
+                checkedItems.length <= 0 ||
+                addressError ||
+                paymentMethods.every((e) => !e.isActive) ||
+                !address
               }
               className="rounded-none w-full"
             >

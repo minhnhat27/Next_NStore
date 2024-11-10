@@ -4,7 +4,7 @@ export default async function Policy() {
   return (
     <>
       <div className="p-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 p-4 md:pt-10 text-sx sm:text-sm md:text-base">
+        <div className="grid grid-cols-2 md:grid-cols-4 pt-4 text-sx sm:text-sm md:text-base">
           <div className="text-center py-4">
             <div className="h-2/3">
               <TruckOutlined className="text-4xl" />

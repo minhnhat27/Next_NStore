@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { formatCount, formatVND, toNextImageLink } from '~/utils/common'
 import Heart from './heart'
 import { StarFilled, StarOutlined } from '@ant-design/icons'
+import { FcFlashOn } from 'react-icons/fc'
 
 const { Meta } = Card
 
@@ -21,9 +22,10 @@ export default function CardProduct({ products, object = 'cover', className }: P
   if (!products || products.length === 0) return <Empty className="col-span-full" />
 
   return products.map((product, i) => {
-    if (product.discountPercent) {
-      const discountedPrice =
-        product.price - product.price * ((product.discountPercent ?? 0) / 100.0)
+    const discountPercent = product.flashSaleDiscountPercent || product.discountPercent
+
+    if (discountPercent) {
+      const discountedPrice = product.price - product.price * (discountPercent / 100.0)
       return !product.id ? (
         <Card cover={<Skeleton.Image className="w-full h-36 xs:h-44 md:h-52" active />} loading />
       ) : (
@@ -34,7 +36,18 @@ export default function CardProduct({ products, object = 'cover', className }: P
             query: { name: product.name },
           }}
         >
-          <Badge.Ribbon text={`-${product.discountPercent}%`} color="red">
+          <Badge.Ribbon
+            text={
+              product.flashSaleDiscountPercent ? (
+                <div className="flex items-center">
+                  <FcFlashOn /> -{discountPercent}%
+                </div>
+              ) : (
+                `-${discountPercent}%`
+              )
+            }
+            color="red"
+          >
             <Card
               hoverable
               styles={{

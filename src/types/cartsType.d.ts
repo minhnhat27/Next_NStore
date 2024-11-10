@@ -15,6 +15,7 @@ interface CartItemsType {
   originPrice: number
   price: number
   discountPercent: number
+  hasFlashSale: boolean
 
   sizeId: number
   sizeName?: string
