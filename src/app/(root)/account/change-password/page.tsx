@@ -44,7 +44,7 @@ export default function ChangePassword() {
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center mt-4 sm:mt-10">
       <Form
         form={form}
         disabled={loading}

@@ -32,7 +32,6 @@ import useSWR, { mutate } from 'swr'
 const { Countdown } = Statistic
 
 interface Props {
-  // productProp: ProductDetailsType
   id: number
 }
 
@@ -49,14 +48,11 @@ export default function Details({ id }: Props) {
     isLoading,
     error,
     mutate: productMutate,
-  } = useSWR<ProductDetailsType>(id ? `${FASHION_API}/${id}` : null, httpService.get)
+  } = useSWR<ProductDetailsType>(id ? `${FASHION_API}/${id}` : undefined, httpService.get)
 
   const [currentImage, setCurrentImage] = useState<string>()
 
-  const initCartItem: CartItemType = useMemo(
-    () => ({ productId: product?.id ?? 0, quantity: 1 }),
-    [product],
-  )
+  const initCartItem: CartItemType = useMemo(() => ({ productId: id, quantity: 1 }), [id])
 
   const [disabledColors, setDisabledColors] = useState<boolean[]>([])
   const [disabledSizes, setDisabledSizes] = useState<boolean[]>([])
@@ -121,7 +117,7 @@ export default function Details({ id }: Props) {
     }
   }
 
-  const addToCart = async () => {
+  const addToCart = async (isBuyNow = false) => {
     if (!state.isAuthenticated) {
       const currentPath = window.location.pathname + window.location.search
 
@@ -154,35 +150,37 @@ export default function Details({ id }: Props) {
         setAddCartLoading(true)
         await httpService.post(CART_API, selected)
 
-        notification.success({
-          message: 'Thành công',
-          description: (
-            <>
-              <div>Đã thêm sản phẩm vào giỏ hàng</div>
-              <Link href="/cart">
-                <Button
-                  type="link"
-                  onClick={() => notification.destroy('addToCart')}
-                  className="px-0"
-                >
-                  Xem giỏ hàng
-                </Button>
-              </Link>
-            </>
-          ),
-          key: 'addToCart',
-          className: 'text-green-500',
-        })
-
         mutate([`${CART_API}`, state.userInfo?.session])
         mutate([`${CART_API}/count`, state.userInfo?.session])
 
         setSelected(initCartItem)
         setDisabledColors(product?.colorSizes.map(() => true) ?? [])
         setDisabledSizes(product?.colorSizes[0].sizeInStocks.map(() => true) ?? [])
+
+        isBuyNow
+          ? router.push(`/cart?id=${id}`)
+          : notification.success({
+              message: 'Thành công',
+              description: (
+                <>
+                  <div>Đã thêm sản phẩm vào giỏ hàng</div>
+                  <Link href="/cart">
+                    <Button
+                      type="link"
+                      onClick={() => notification.destroy('addToCart')}
+                      className="px-0"
+                    >
+                      Xem giỏ hàng
+                    </Button>
+                  </Link>
+                </>
+              ),
+              key: 'addToCart',
+              className: 'text-green-500',
+            })
       } catch (error: any) {
         notification.error({
-          message: 'Thêm vào giỏ hàng thất bại',
+          message: 'Thất bại',
           description: showError(error),
           className: 'text-red-500',
         })
@@ -366,7 +364,7 @@ export default function Details({ id }: Props) {
               )}
               <div className="flex-1 place-content-end">
                 <div
-                  className={`grid grid-cols-5 gap-2 md:px-6 py-2 ${
+                  className={`grid grid-cols-5 mb-2 gap-2 md:px-6 py-2 ${
                     selectedError && 'bg-red-50 border border-red-400'
                   }`}
                 >
@@ -424,12 +422,19 @@ export default function Details({ id }: Props) {
                   )}
                 </div>
                 <div className="flex justify-end items-end gap-2">
-                  <Button danger size="large" type="primary" className="rounded-sm p-6">
+                  <Button
+                    onClick={() => addToCart(true)}
+                    loading={addCartLoading}
+                    danger
+                    size="large"
+                    type="primary"
+                    className="rounded-sm p-6"
+                  >
                     Mua ngay
                   </Button>
                   <Button
                     danger
-                    onClick={addToCart}
+                    onClick={() => addToCart()}
                     loading={addCartLoading}
                     size="large"
                     className="rounded-sm p-6"

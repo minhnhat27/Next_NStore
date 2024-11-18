@@ -9,7 +9,7 @@ const API_URL = process.env.API_URL
 
 const getPopularBrands = async (): Promise<BrandType[] | undefined> => {
   try {
-    const data = await httpService.get(API_URL + BRAND_API)
+    const data = await httpService.get(`${API_URL}${BRAND_API}/popular`)
     return data
   } catch (error) {
     return undefined
@@ -27,14 +27,14 @@ export default async function PopularBrands() {
       <div className="text-center pb-6 font-semibold text-xl md:text-3xl text-blue-950 font-sans">
         Thương hiệu phổ biến
       </div>
-      <div className="px-8 md:px-16">
+      <div className="px-2 sm:px-8 md:px-16">
         {brands ? (
           <Carousel
             arrows
             infinite
             autoplay
             dots={false}
-            slidesToShow={5}
+            slidesToShow={brands.length > 5 ? 5 : brands.length}
             responsive={[
               { breakpoint: 480, settings: { slidesToShow: 2 } },
               { breakpoint: 768, settings: { slidesToShow: 3 } },

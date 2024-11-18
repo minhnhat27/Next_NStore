@@ -9,7 +9,7 @@ export const revalidate = 7200
 const getBanner = async (): Promise<string[]> => {
   try {
     const data = await httpService.get(process.env.API_URL + HOME_API + '/banner')
-    return data
+    return data ?? []
   } catch (error) {
     return []
   }
@@ -19,7 +19,7 @@ export default async function Banner() {
   const images = await getBanner()
 
   return (
-    <Carousel arrows autoplay className="h-auto lg:max-h-screen">
+    <Carousel arrows autoplay className="transition-all h-48 sm:h-screen--header 2xl:h-[36rem]">
       {images.map((url, i) => (
         <Image
           key={i}
@@ -29,7 +29,7 @@ export default async function Banner() {
           priority
           quality={100}
           src={toNextImageLink(url)}
-          className="h-auto lg:max-h-screen"
+          className="transition-all h-48 sm:h-screen--header 2xl:h-[36rem]"
           alt="banner"
         />
       ))}

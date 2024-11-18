@@ -1,11 +1,10 @@
 'use client'
 
-import { FunnelPlotOutlined, HeartFilled, HeartOutlined } from '@ant-design/icons'
+import { FunnelPlotOutlined } from '@ant-design/icons'
 import {
   Badge,
   Button,
   ButtonProps,
-  Card,
   Checkbox,
   CheckboxOptionType,
   Drawer,
@@ -55,7 +54,7 @@ enum FilterEnums {
   RATING = 'rating',
   SALES = 'sales',
   DISCOUNT = 'discount',
-  FLASHSALE = 'flashsale',
+  FLASHSALE = 'flashSale',
 }
 
 const formatter: NonNullable<SliderSingleProps['tooltip']>['formatter'] = (value) =>
@@ -251,6 +250,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
       setFilters(newFilters)
       getFilters(newFilters)
     }
+    //eslint-disable-next-line
   }, [key])
 
   const onChangeFilters = (
@@ -349,7 +349,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
     }
 
     return filtersName
-  }, [params, initFilters, brandOptions, categoryOptions, materialOptions, genderOpts])
+  }, [params, brandOptions, categoryOptions, materialOptions])
 
   if (isLoading)
     return (
@@ -385,7 +385,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
           </Badge>
         </Flex>
       </div>
-      {data && data.items.length <= 0 ? (
+      {!data || !data?.items.length ? (
         <Result
           className="py-0"
           status="404"
@@ -494,7 +494,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
           </div>
           <div>
             <Checkbox
-              checked={filters.flashsale}
+              checked={filters.flashSale}
               onChange={(e) => onChangeFilters(FilterEnums.FLASHSALE, e.target.checked)}
             >
               Flash sale

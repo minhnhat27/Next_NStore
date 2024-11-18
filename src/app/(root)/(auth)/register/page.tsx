@@ -1,8 +1,8 @@
 'use client'
 
-import { App, Button, Divider, Form, FormProps, Input, Typography } from 'antd'
+import { App, Button, Divider, Form, FormProps, Input, Statistic, Typography } from 'antd'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   LockOutlined,
   UserOutlined,
@@ -12,7 +12,6 @@ import {
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { showError } from '~/utils/common'
-import useCountdown from '~/hooks/useCountdown'
 import httpService from '~/lib/http-service'
 import { AUTH_API } from '~/utils/api-urls'
 import { CredentialResponse, GoogleLogin } from '@react-oauth/google'
@@ -34,30 +33,33 @@ const Register: React.FC = () => {
   const [formState, setFormState] = useState(State.EMAIL)
   const [loading, setLoading] = useState(false)
 
-  // const [countdown, setCountdown] = useState(0)
-  const { countdown, setCountdown } = useCountdown()
+  const [countdownValue, setCountdownValue] = useState(0)
 
-  const previousFormState = () => setFormState(formState > 0 ? formState - 1 : formState)
+  const previousFormState = () => setFormState((prev) => (prev > 0 ? prev - 1 : prev))
 
-  const nextFormState = () =>
-    setFormState(formState < Object.keys(State).length - 1 ? formState + 1 : formState)
+  const nextFormState = useCallback(
+    () => setFormState((prev) => (prev < Object.keys(State).length - 1 ? prev + 1 : prev)),
+    [],
+  )
 
-  const handleSendOTP = async (email: string) => {
-    try {
-      // const em = form.getFieldValue('email')
-      const data: SendOTPType = { email }
-      await httpService.post(AUTH_API + '/send-otp', data)
-      setEmail(email)
-      nextFormState()
-    } catch (error: any) {
-      form.setFields([
-        {
-          name: 'email',
-          errors: [showError(error)],
-        },
-      ])
-    }
-  }
+  const handleSendOTP = useCallback(
+    async (email: string, nextState: boolean = true) => {
+      try {
+        const data: SendOTPType = { email }
+        await httpService.post(AUTH_API + '/send-otp', data)
+        setEmail(email)
+        nextState && nextFormState()
+      } catch (error: any) {
+        form.setFields([
+          {
+            name: 'email',
+            errors: [showError(error)],
+          },
+        ])
+      }
+    },
+    [form, nextFormState],
+  )
 
   const handleVerifyOTP = async (token: string) => {
     try {
@@ -107,7 +109,7 @@ const Register: React.FC = () => {
     switch (formState) {
       case State.EMAIL: {
         await handleSendOTP(values.email)
-        setCountdown(60)
+        setCountdownValue(60)
         break
       }
       case State.VERIFY: {
@@ -120,17 +122,6 @@ const Register: React.FC = () => {
       }
     }
     setLoading(false)
-  }
-
-  const handleResend = async () => {
-    setLoading(true)
-    const data: SendOTPType = {
-      email: form.getFieldValue('email'),
-    }
-
-    await httpService.post(AUTH_API + '/send-otp', data)
-    setLoading(false)
-    setCountdown(60)
   }
 
   const googleRegister = async (response: CredentialResponse) => {
@@ -150,24 +141,18 @@ const Register: React.FC = () => {
     }
   }
 
-  return (
-    <>
-      <div className="flex h-16 gap-2">
-        {formState === State.VERIFY && (
-          <Button onClick={previousFormState} type="text">
-            <ArrowLeftOutlined className="text-2xl" />
-          </Button>
-        )}
-        <Title level={3}>
-          {formState === State.EMAIL
-            ? 'Đăng ký'
-            : formState === State.VERIFY
-            ? 'Nhập mã xác nhận'
-            : 'Xác nhận thông tin'}
-        </Title>
-      </div>
-      <Form form={form} disabled={loading} layout="vertical" onFinish={handleSubmit}>
-        {formState === State.EMAIL ? (
+  const renderInteface = useMemo(() => {
+    const handleResend = () => {
+      if (email) {
+        handleSendOTP(email, false)
+        setCountdownValue(60)
+        form.setFieldValue('token', undefined)
+      } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
+    }
+
+    switch (formState) {
+      case State.EMAIL:
+        return (
           <Form.Item<SendOTPType>
             name="email"
             hasFeedback
@@ -185,7 +170,9 @@ const Register: React.FC = () => {
               size="large"
             />
           </Form.Item>
-        ) : formState === State.VERIFY ? (
+        )
+      case State.VERIFY:
+        return (
           <div className="text-center">
             <div className="mb-8 flex flex-col items-center">
               <span>Mã xác thực sẽ được gửi qua Email đến</span>
@@ -200,23 +187,31 @@ const Register: React.FC = () => {
             >
               <Input.OTP size="large" />
             </Form.Item>
-            <div className="h-16 flex flex-col items-center">
-              {countdown > 0 ? (
-                <span className="text-gray-500">
-                  Vui lòng chờ <span className="font-semibold text-red-500">{countdown}</span> giây
-                  để gửi lại.
-                </span>
-              ) : (
+            <div className="mb-8 flex justify-center items-center gap-1">
+              {countdownValue > 0 ? (
                 <>
+                  <div className="text-gray-500">Gửi lại sau</div>{' '}
+                  <Statistic.Countdown
+                    onFinish={() => setCountdownValue(0)}
+                    valueStyle={{ fontSize: 12, fontWeight: 'bold', color: 'red' }}
+                    format="ss"
+                    value={new Date().getTime() + countdownValue * 1000}
+                  />
+                  <span className="text-gray-500">giây.</span>
+                </>
+              ) : (
+                <div className="flex items-center">
                   <span>Bạn vẫn chưa nhận được?</span>
                   <Button type="link" onClick={handleResend}>
                     Gửi lại
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>
-        ) : (
+        )
+      case State.REGISTER:
+        return (
           <>
             <Form.Item<RegisterType>
               name="name"
@@ -272,7 +267,49 @@ const Register: React.FC = () => {
               />
             </Form.Item>
           </>
+        )
+
+      default:
+        return (
+          <Form.Item<SendOTPType>
+            name="email"
+            hasFeedback
+            rules={[
+              {
+                type: 'email',
+                message: 'Email không hợp lệ',
+              },
+              { required: true, message: 'Vui lòng nhập Email của bạn.' },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined className="text-gray-400" />}
+              placeholder="Địa chỉ Email"
+              size="large"
+            />
+          </Form.Item>
+        )
+    }
+  }, [countdownValue, form, email, formState, handleSendOTP])
+
+  return (
+    <>
+      <div className="flex h-16 gap-2">
+        {formState === State.VERIFY && (
+          <Button onClick={previousFormState} type="text">
+            <ArrowLeftOutlined className="text-2xl" />
+          </Button>
         )}
+        <Title level={3}>
+          {formState === State.EMAIL
+            ? 'Đăng ký'
+            : formState === State.VERIFY
+            ? 'Nhập mã xác nhận'
+            : 'Xác nhận thông tin'}
+        </Title>
+      </div>
+      <Form form={form} disabled={loading} layout="vertical" onFinish={handleSubmit}>
+        {renderInteface}
         <Form.Item>
           <Button
             loading={loading}

@@ -3,6 +3,8 @@ import { NextRequest } from 'next/server'
 import { NextError, NextSuccess } from '~/lib/next-response'
 
 export const dynamic = 'force-static'
+export const fetchCache = 'force-cache'
+export const revalidate = false
 
 const Token = process.env.GHN_TOKEN
 const HOST = process.env.GHN_PROVINCE_HOST

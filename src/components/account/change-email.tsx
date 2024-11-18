@@ -1,8 +1,6 @@
 import { ArrowLeftOutlined, MailOutlined } from '@ant-design/icons'
-import { App, Button, Form, FormProps, Input, Modal } from 'antd'
-import { useState } from 'react'
-import { KeyedMutator } from 'swr'
-import useCountdown from '~/hooks/useCountdown'
+import { App, Button, Form, FormProps, Input, Modal, Statistic } from 'antd'
+import { useCallback, useMemo, useState } from 'react'
 import httpService from '~/lib/http-service'
 import { AuthTypeEnum } from '~/types/enum'
 import { AUTH_API } from '~/utils/api-urls'
@@ -33,21 +31,18 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
   const [formState, setFormState] = useState<ChangeEmailState>(ChangeEmailState.CHECK_PASSWORD)
 
   const [newEmail, setNewEmail] = useState<string>()
-
-  const { countdown, setCountdown } = useCountdown()
-
-  const previousFormState = () => {
-    form.setFieldValue('token', undefined)
-    setFormState(formState > 0 ? formState - 1 : formState)
-  }
+  const [countdownValue, setCountdownValue] = useState(0)
 
   const resetFormState = () => {
     form.resetFields()
     setFormState(ChangeEmailState.CHECK_PASSWORD)
   }
 
-  const nextFormState = () =>
-    setFormState(formState < Object.keys(ChangeEmailState).length - 1 ? formState + 1 : formState)
+  const nextFormState = useCallback(
+    () =>
+      setFormState((prev) => (prev < Object.keys(ChangeEmailState).length - 1 ? prev + 1 : prev)),
+    [],
+  )
 
   const handleCheckPassword = async (password: string) => {
     try {
@@ -58,33 +53,28 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
     }
   }
 
-  const handleSendOTP = async (email: string) => {
-    try {
-      const data = { email, type: AuthTypeEnum.ChangeEmail }
-      await httpService.post(AUTH_API + '/send-otp', data)
-      setNewEmail(email)
-      nextFormState()
-    } catch (error) {
-      form.setFields([{ name: 'email', errors: [showError(error)] }])
-    }
-  }
-
-  const handleResend = () => {
-    if (newEmail) {
-      setCountdown(60)
-      handleSendOTP(newEmail)
-      form.setFieldValue('token', undefined)
-    } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
-  }
+  const handleSendOTP = useCallback(
+    async (email: string, nextState: boolean = true) => {
+      try {
+        const data = { email, type: AuthTypeEnum.ChangeEmail }
+        await httpService.post(AUTH_API + '/send-otp', data)
+        setNewEmail(email)
+        nextState && nextFormState()
+      } catch (error) {
+        form.setFields([{ name: 'email', errors: [showError(error)] }])
+      }
+    },
+    [form, nextFormState],
+  )
 
   const handleChangeEmail = async (token: string) => {
     try {
       if (newEmail) {
         const data = { email: newEmail, token }
         await httpService.put(AUTH_API + '/change-email', data)
-        setOpen(false)
-        resetFormState()
         mutate_info({ ...info, email: maskEmail(newEmail) })
+        resetFormState()
+        setOpen(false)
         notification.success({
           message: 'Thành công',
           description: 'Đã thay đổi địa chỉ Email',
@@ -104,7 +94,7 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
         break
       case ChangeEmailState.NEW_EMAIL:
         await handleSendOTP(values.email)
-        setCountdown(60)
+        setCountdownValue(60)
         break
       case ChangeEmailState.OTP_CONFIRM:
         await handleChangeEmail(values.token)
@@ -113,7 +103,19 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
     setLoading(false)
   }
 
-  const renderInteface = () => {
+  const renderInteface = useMemo(() => {
+    const handleResend = () => {
+      if (newEmail) {
+        setCountdownValue(60)
+        handleSendOTP(newEmail, false)
+        form.setFieldValue('token', undefined)
+      } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
+    }
+
+    const previousFormState = () => {
+      form.setFieldValue('token', undefined)
+      setFormState((prev) => (prev > 0 ? prev - 1 : prev))
+    }
     switch (formState) {
       case ChangeEmailState.CHECK_PASSWORD:
         return (
@@ -151,7 +153,7 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
         return (
           <>
             <ArrowLeftOutlined onClick={previousFormState} />
-            <div>
+            <div className="text-center">
               <div className="flex flex-col items-center mb-4">
                 <span>Mã xác thực sẽ được gửi qua Email đến</span>
                 <span className="space-x-1">
@@ -167,12 +169,18 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
                   <Input.OTP size="large" />
                 </Form.Item>
               </div>
-              <div className="flex justify-center">
-                {countdown > 0 ? (
-                  <span className="text-gray-500">
-                    Vui lòng chờ <span className="font-semibold text-red-500">{countdown}</span>{' '}
-                    giây để gửi lại.
-                  </span>
+              <div className="flex justify-center items-center gap-1">
+                {countdownValue > 0 ? (
+                  <>
+                    <div className="text-gray-500">Gửi lại sau</div>{' '}
+                    <Statistic.Countdown
+                      onFinish={() => setCountdownValue(0)}
+                      valueStyle={{ fontSize: 12, fontWeight: 'bold', color: 'red' }}
+                      format="ss"
+                      value={new Date().getTime() + countdownValue * 1000}
+                    />
+                    <span className="text-gray-500">giây.</span>
+                  </>
                 ) : (
                   <div className="flex items-center">
                     <span>Bạn vẫn chưa nhận được?</span>
@@ -196,7 +204,7 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
           </Form.Item>
         )
     }
-  }
+  }, [formState, countdownValue, newEmail, form, handleSendOTP])
 
   return (
     <>
@@ -227,7 +235,7 @@ export default function ChangeEmail({ info, mutate_info }: Props) {
           </Form>
         )}
       >
-        {renderInteface()}
+        {renderInteface}
       </Modal>
       <div className="flex flex-row justify-between items-center">
         <Form.Item className="truncate" label="Địa chỉ Email (Tên đăng nhập)">

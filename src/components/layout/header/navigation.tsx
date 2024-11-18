@@ -53,11 +53,12 @@ export default function Navigation() {
             priority
             alt="logo"
             src="/images/Logo-1x1.png"
+            blurDataURL="/images/Logo-1x1.png"
             width={0}
             height={0}
             sizes="100vw"
             quality={100}
-            className="w-24 h-auto"
+            className="w-24 h-auto max-h-24"
           />
         </Link>
       </Flex>

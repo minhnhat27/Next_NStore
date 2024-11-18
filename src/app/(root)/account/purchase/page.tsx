@@ -36,6 +36,7 @@ import {
 import InfiniteScroll from 'react-infinite-scroll-component'
 import TrackingOrder from '~/components/account/tracking-order'
 import dayjs from 'dayjs'
+import { useSearchParams } from 'next/navigation'
 const { Countdown } = Statistic
 
 const Processing_Status = OrderStatus['Đang xử lý']
@@ -46,8 +47,10 @@ const Received_Status = OrderStatus['Đã nhận hàng']
 export default function Purchase() {
   const { state } = useAuth()
   const session = state.userInfo?.session
-  const { router } = useRealTimeParams()
+  const { router, setRealTimeParams } = useRealTimeParams()
   const { message } = App.useApp()
+
+  const searchParams = useSearchParams()
 
   const [orderId, setOrderId] = useState<number>()
 
@@ -55,11 +58,19 @@ export default function Purchase() {
   const [openTrackOder, setOpenTrackOder] = useState<boolean>(false)
   const [shippingCode, setShippingCode] = useState<string>()
 
-  const [params, setParams] = useState<PaginationType & { orderStatus?: number }>({
-    page: 1,
-    pageSize: 5,
-    orderStatus: 0,
+  const [params, setParams] = useState<PaginationType & { orderStatus?: number }>(() => {
+    let orderStatus: number | undefined = Number(searchParams.get('orderStatus')) ?? 0
+    if (orderStatus === 7) {
+      orderStatus = undefined
+    }
+
+    return {
+      page: 1,
+      pageSize: 5,
+      orderStatus,
+    }
   })
+
   const [total, setTotal] = useState<number>(5)
 
   const { data, mutate } = useSWR<PagedType<OrderType>>(
@@ -147,6 +158,8 @@ export default function Purchase() {
   const onChangeOrderStatus = (value: string) => {
     setOrders([])
     let orderStatus: number | undefined = Number(value)
+    setRealTimeParams({ orderStatus })
+
     if (orderStatus === 7) orderStatus = undefined
     setParams((pre) => ({ ...pre, page: 1, orderStatus }))
   }
@@ -157,7 +170,7 @@ export default function Purchase() {
         <Tabs
           tabBarStyle={{ margin: 0 }}
           onChange={onChangeOrderStatus}
-          // tabPosition="right"
+          defaultActiveKey={searchParams.get('orderStatus') ?? undefined}
           items={Object.entries(OrderStatus)
             .filter(([key]) => !isNaN(Number(key)))
             .map(([key, value]) => ({

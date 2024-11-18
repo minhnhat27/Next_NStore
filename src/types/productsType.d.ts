@@ -8,7 +8,7 @@ interface Filters extends PaginationType {
   minPrice?: number
   maxPrice?: number
   discount?: boolean
-  flashsale?: boolean
+  flashSale?: boolean
 }
 
 interface FilterType extends Filters {

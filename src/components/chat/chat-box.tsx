@@ -432,11 +432,7 @@ export default function ChatBox() {
         setHasFetched(true)
       }
       setChatLoading(false)
-    }
-
-    if (connection && session && !quickChat) {
-      setQuickChat(true)
-    }
+    } else if (session && !quickChat) setQuickChat(true)
   }
 
   useEffect(() => {
@@ -452,19 +448,20 @@ export default function ChatBox() {
       }
     }
     fetchData()
+
+    // eslint-disable-next-line
   }, [session])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (connection && open && session) {
-          await connection.invoke('ReadMessage', session)
-        }
+        if (connection && open && session) await connection.invoke('ReadMessage', session)
       } catch (error) {
         console.log(error)
       }
     }
     fetchData()
+    // eslint-disable-next-line
   }, [messages])
 
   return (

@@ -3,7 +3,6 @@
 import { Badge, Carousel, CountdownProps, Divider, Skeleton, Statistic } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
 import { BsFire } from 'react-icons/bs'
 import { FcFlashOn } from 'react-icons/fc'
 import useSWR from 'swr'
@@ -15,7 +14,6 @@ const { Countdown } = Statistic
 
 export default function Flashsale() {
   const { data, isLoading, mutate } = useSWR<FlashSaleResponse>(FLASHSALE_API, httpService.get)
-  const [reCalc, setReCalc] = useState<boolean>(false)
 
   // const getTimeDisabled = (key: string) => {
   //   const hours = new Date().getHours()
@@ -54,21 +52,20 @@ export default function Flashsale() {
   //   return undefined
   // }
 
-  const nextTimeFrame = useMemo(() => {
+  const nextTimeFrame = () => {
     const hours = new Date().getHours()
     if (hours < 10) return '10:00'
     else if (hours < 19) return '19:00'
     else if (hours < 22) return '00:00'
 
     return '00:00'
-  }, [reCalc])
+  }
 
   const onFinish: CountdownProps['onFinish'] = () => {
     mutate({
       products: [],
       endFlashSale: new Date().toISOString(),
     })
-    setReCalc(!reCalc)
   }
 
   if (isLoading) {
@@ -102,7 +99,7 @@ export default function Flashsale() {
         </div>
         {!data?.endFlashSale ? (
           <>
-            Khung giờ tiếp theo: <span className="text-red-500">{nextTimeFrame}</span>
+            Khung giờ tiếp theo: <span className="text-red-500">{nextTimeFrame()}</span>
           </>
         ) : (
           !data?.products.length && 'Không có sản phẩm tham gia chương trình'
@@ -127,7 +124,7 @@ export default function Flashsale() {
                     color="red"
                     text={
                       <div className="flex items-center">
-                        <FcFlashOn /> -{item.flashSaleDiscountPercent}%
+                        <FcFlashOn className="animate-pulse" /> -{item.flashSaleDiscountPercent}%
                       </div>
                     }
                   >

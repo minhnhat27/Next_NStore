@@ -40,7 +40,7 @@ export default function CardProduct({ products, object = 'cover', className }: P
             text={
               product.flashSaleDiscountPercent ? (
                 <div className="flex items-center">
-                  <FcFlashOn /> -{discountPercent}%
+                  <FcFlashOn className="animate-pulse" /> -{discountPercent}%
                 </div>
               ) : (
                 `-${discountPercent}%`

@@ -29,7 +29,7 @@ import ChangeAddress from './change-address'
 import ChooseVoucher from './choose-voucher'
 import debounce from 'debounce'
 import useSWRImmutable from 'swr/immutable'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
 import useSWR, { mutate } from 'swr'
 import { initPagination } from '~/utils/initType'
@@ -53,7 +53,7 @@ const columns = (
     render: (value, _, index) => (
       <Image
         alt="product"
-        className="transition-all w-24 h-auto"
+        className="transition-all w-24 h-20 object-cover"
         width={0}
         height={0}
         priority={index < 3}
@@ -183,6 +183,7 @@ const initTotal: TotalType = {
 
 export default function CartDetails({ paymentMethods }: IProps) {
   const { state } = useAuth()
+  const searchParams = useSearchParams()
   const session = state.userInfo?.session
 
   const router = useRouter()
@@ -193,6 +194,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
   const [voucher, setVoucher] = useState<VoucherType>()
   const [total, setTotal] = useState<TotalType>(initTotal)
+
+  const [defaultSelectedRowKeys, setDefaultSelectedRowKeys] = useState<React.Key[]>([])
 
   const [paymentMethodId, setPaymentMethodId] = useState<number | undefined>(
     paymentMethods.at(0)?.id,
@@ -207,6 +210,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
     getCheckboxProps: (record: CartItemsType) => ({
       disabled: !record.colorId || !record.inStock || !record.sizeId,
     }),
+    defaultSelectedRowKeys,
   }
 
   const {
@@ -286,9 +290,17 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
   useEffect(() => {
     if (data) {
+      const id = Number(searchParams.get('id'))
+      if (id) {
+        const cartItem = data.find((e) => e.productId === id)
+        if (cartItem) {
+          setCheckedItems([cartItem])
+          setDefaultSelectedRowKeys([cartItem.id])
+        }
+      }
       setCartItems(data)
     }
-  }, [data])
+  }, [data, searchParams])
 
   useEffect(() => {
     setCheckedItems((pre) =>
@@ -327,6 +339,7 @@ export default function CartDetails({ paymentMethods }: IProps) {
     setCartItems(updatedCart)
   }
 
+  // eslint-disable-next-line
   const handleChangeQuantity = useCallback(
     debounce(async (item: CartItemsType, value: number | null): Promise<void> => {
       if (value) {
@@ -439,8 +452,13 @@ export default function CartDetails({ paymentMethods }: IProps) {
 
         const url = await createOrderTrigger(order)
         // const url = await httpService.post(ORDER_API, order)
-        mutate([`${CART_API}/count`, state.userInfo?.session])
+
         mutate([ORDER_API, state.userInfo?.session, initPagination])
+        const newCart = cartItems.filter((e) => !checkedItems.some((x) => x.id === e.id))
+
+        mutate([`${CART_API}/count`, state.userInfo?.session], newCart.length)
+        setCartItems(newCart)
+        cart_mutate(newCart)
 
         const paymentMethodName = paymentMethods.find((e) => e.id === paymentMethodId)?.name
 

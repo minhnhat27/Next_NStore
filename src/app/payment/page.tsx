@@ -54,6 +54,7 @@ export default function Payment() {
   useEffect(() => {
     const handlePayment = async () => {
       if (params && callbackUrl) {
+        let success = false
         try {
           await httpService.getWithParams(PAYMENT_API + callbackUrl, params)
           notification.success({
@@ -61,6 +62,7 @@ export default function Payment() {
             description: 'Vui lòng kiểm tra lại đơn hàng của bạn',
             className: 'text-green-500',
           })
+          success = true
         } catch (error) {
           notification.error({
             message: 'Thanh toán thất bại',
@@ -68,7 +70,7 @@ export default function Payment() {
             className: 'text-red-500',
           })
         } finally {
-          router.replace('/account/purchase')
+          router.replace(`/account/purchase?orderStatus=${success ? 1 : 0}`)
         }
       }
     }

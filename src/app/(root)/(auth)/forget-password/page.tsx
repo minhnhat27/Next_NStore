@@ -1,10 +1,9 @@
 'use client'
 
 import { ArrowLeftOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
-import { App, Button, Form, FormProps, Input, Typography } from 'antd'
+import { App, Button, Form, FormProps, Input, Statistic, Typography } from 'antd'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import useCountdown from '~/hooks/useCountdown'
+import { useCallback, useState } from 'react'
 import httpService from '~/lib/http-service'
 import { AuthTypeEnum } from '~/types/enum'
 import { AUTH_API } from '~/utils/api-urls'
@@ -30,25 +29,22 @@ export default function ForgetPassword() {
 
   const [formState, setFormState] = useState(State.EMAIL)
 
-  const { countdown, setCountdown } = useCountdown()
+  // const { countdown, setCountdown } = useCountdown()
+  const [countdownValue, setCountdownValue] = useState(0)
 
-  const nextFormState = () =>
-    setFormState(formState < Object.keys(State).length - 1 ? formState + 1 : formState)
+  const previousFormState = () => setFormState((prev) => (prev > 0 ? prev - 1 : prev))
 
-  const handleResend = () => {
-    if (email) {
-      setCountdown(60)
-      handleSendOTP(email)
-      form.setFieldValue('token', undefined)
-    } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
-  }
+  const nextFormState = useCallback(
+    () => setFormState((prev) => (prev < Object.keys(State).length - 1 ? prev + 1 : prev)),
+    [],
+  )
 
-  const handleSendOTP = async (email: string) => {
+  const handleSendOTP = async (email: string, nextState: boolean = true) => {
     try {
       const data: SendOTPType = { email, type: AuthTypeEnum.ForgetPassword }
       await httpService.post(AUTH_API + '/send-otp', data)
       setEmail(email)
-      nextFormState()
+      nextState && nextFormState()
     } catch (error: any) {
       form.setFields([
         {
@@ -57,6 +53,14 @@ export default function ForgetPassword() {
         },
       ])
     }
+  }
+
+  const handleResend = () => {
+    if (email) {
+      setCountdownValue(60)
+      handleSendOTP(email, false)
+      form.setFieldValue('token', undefined)
+    } else form.setFields([{ name: 'token', errors: ['Không tìm thấy email'] }])
   }
 
   const handleVerifyOTP = async (token: string) => {
@@ -109,7 +113,7 @@ export default function ForgetPassword() {
     switch (formState) {
       case State.EMAIL: {
         await handleSendOTP(values.email)
-        setCountdown(60)
+        setCountdownValue(60)
         break
       }
       case State.VERIFY: {
@@ -127,7 +131,11 @@ export default function ForgetPassword() {
   return (
     <>
       <div className="flex h-16 gap-2">
-        <Button onClick={router.back} type="text">
+        <Button
+          disabled={loading}
+          onClick={formState !== State.EMAIL ? previousFormState : router.back}
+          type="text"
+        >
           <ArrowLeftOutlined className="text-2xl" />
         </Button>
         <Title level={3}>{formState == State.RESET ? 'Đặt lại mật khẩu' : 'Quên mật khẩu'}</Title>
@@ -166,19 +174,25 @@ export default function ForgetPassword() {
             >
               <Input.OTP size="large" />
             </Form.Item>
-            <div className="h-16 flex flex-col items-center">
-              {countdown > 0 ? (
-                <span className="text-gray-500">
-                  Vui lòng chờ <span className="font-semibold text-red-500">{countdown}</span> giây
-                  để gửi lại.
-                </span>
-              ) : (
+            <div className="mb-8 flex justify-center items-center gap-1">
+              {countdownValue > 0 ? (
                 <>
+                  <div className="text-gray-500">Gửi lại sau</div>{' '}
+                  <Statistic.Countdown
+                    onFinish={() => setCountdownValue(0)}
+                    valueStyle={{ fontSize: 12, fontWeight: 'bold', color: 'red' }}
+                    format="ss"
+                    value={new Date().getTime() + countdownValue * 1000}
+                  />
+                  <span className="text-gray-500">giây.</span>
+                </>
+              ) : (
+                <div className="flex items-center">
                   <span>Bạn vẫn chưa nhận được?</span>
                   <Button type="link" onClick={handleResend}>
                     Gửi lại
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>

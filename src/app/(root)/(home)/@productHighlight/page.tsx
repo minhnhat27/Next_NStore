@@ -19,7 +19,7 @@ export default function ProductHighlight() {
   const [page, setPage] = useState<number>(1)
   const [loading, setLoading] = useState<boolean>(true)
 
-  const pageSize = 5
+  const pageSize = 6
 
   const [currentSize] = useState<number>(() => {
     const size = searchParams.get('currentSize')
