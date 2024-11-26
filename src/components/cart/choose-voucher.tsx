@@ -115,7 +115,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
                 <Divider className="my-2" />
                 <div className="text-xs">
                   <WarningOutlined className="text-yellow-500" /> Mua thêm{' '}
-                  {formatVND.format(commonVoucher.minOrder - cartPrice)} để sử dụng Voucher
+                  {formatVND.format(commonVoucher.minOrder - cartPrice)} để sử dụng
                 </div>
               </>
             )}
@@ -150,9 +150,9 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
                   {cartPrice < v.minOrder && (
                     <>
                       <Divider className="my-2" />
-                      <div className="text-xs">
+                      <div className="text-xs truncate">
                         <WarningOutlined className="text-yellow-500" /> Mua thêm{' '}
-                        {formatVND.format(v.minOrder - cartPrice)} để sử dụng Voucher
+                        {formatVND.format(v.minOrder - cartPrice)} để sử dụng mã giảm giá
                       </div>
                     </>
                   )}

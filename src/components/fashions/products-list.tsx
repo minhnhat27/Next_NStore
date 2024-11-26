@@ -286,7 +286,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
   }
 
   const showFilters = useCallback((): React.ReactNode => {
-    let filtersName = ''
+    let filtersName = key ? `Từ khóa "${key}"` : ''
 
     if (params.minPrice) {
       filtersName += formatVND.format(params.minPrice)
@@ -349,7 +349,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
     }
 
     return filtersName
-  }, [params, brandOptions, categoryOptions, materialOptions])
+  }, [params, brandOptions, categoryOptions, materialOptions, key])
 
   if (isLoading)
     return (
@@ -438,21 +438,21 @@ export default function Products({ brands, categories, material, filtersProp }: 
         <div className="space-y-3">
           <Title level={5}>Danh mục</Title>
           <Checkbox.Group
-            className="grid grid-cols-2 gap-1"
+            className="grid grid-cols-2 gap-1 items-center"
             value={filters.categoryIds}
             onChange={(e) => onChangeFilters(FilterEnums.CATEGORIES, e)}
             options={categoryOptions}
           />
           <Title level={5}>Thương hiệu</Title>
           <Checkbox.Group
-            className="grid grid-cols-2 gap-1"
+            className="grid grid-cols-2 gap-1 items-center"
             value={filters.brandIds}
             onChange={(e) => onChangeFilters(FilterEnums.BRANDS, e)}
             options={brandOptions}
           />
           <Title level={5}>Chất liệu</Title>
           <Checkbox.Group
-            className="grid grid-cols-2 gap-1"
+            className="grid grid-cols-2 gap-1 items-center"
             value={filters.materialIds}
             onChange={(e) => onChangeFilters(FilterEnums.MATERIALS, e)}
             options={materialOptions}
@@ -461,7 +461,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
             <>
               <Title level={5}>Giới tính</Title>
               <Checkbox.Group
-                className="grid grid-cols-3 gap-1"
+                className="grid grid-cols-3 gap-1 items-center"
                 value={filters.genders}
                 onChange={(e) => onChangeFilters(FilterEnums.GENDERS, e)}
                 options={genderOpts}

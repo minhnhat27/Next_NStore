@@ -2,6 +2,7 @@
 
 import { App } from 'antd'
 import { createContext, useEffect, useState } from 'react'
+import useSWR from 'swr'
 import useSWRImmutable from 'swr/immutable'
 import useAuth from '~/hooks/useAuth'
 import httpService from '~/lib/http-service'
@@ -20,7 +21,7 @@ export default function FavoriteProvider({ children }: IProps) {
   const { state } = useAuth()
   const session = state.userInfo?.session
 
-  const { data } = useSWRImmutable<number[]>(
+  const { data } = useSWR<number[]>(
     state.isAuthenticated && [ACCOUNT_API + '/favorite', session],
     ([url, session]) => httpService.getWithSession(url, session),
   )

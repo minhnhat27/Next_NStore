@@ -58,6 +58,8 @@ export default function Purchase() {
   const [openTrackOder, setOpenTrackOder] = useState<boolean>(false)
   const [shippingCode, setShippingCode] = useState<string>()
 
+  const [payUrlLoading, setPayUrlLoading] = useState<boolean>(false)
+
   const [params, setParams] = useState<PaginationType & { orderStatus?: number }>(() => {
     let orderStatus: number | undefined = Number(searchParams.get('orderStatus')) ?? 0
     if (orderStatus === 7) {
@@ -73,9 +75,10 @@ export default function Purchase() {
 
   const [total, setTotal] = useState<number>(5)
 
-  const { data, mutate } = useSWR<PagedType<OrderType>>(
+  const { data, mutate, isValidating } = useSWR<PagedType<OrderType>>(
     [ORDER_API, session, params],
     ([ORDER_API, session, params]) => httpService.getWithSessionParams(ORDER_API, session, params),
+    { revalidateOnMount: true },
   )
 
   const { data: order_details, isLoading: order_details_load } = useSWRImmutable<OrderDetailsType>(
@@ -87,21 +90,37 @@ export default function Purchase() {
 
   useEffect(() => {
     if (data) {
-      setOrders((pre) => [...pre, ...data.items])
+      if (params.page === 1) setOrders(data.items)
+      else setOrders((pre) => [...pre, ...data.items])
       setTotal(data.totalItems)
     }
-  }, [data])
+  }, [data, params])
+
+  // useEffect(() => {
+  //   if (!orders.length) setTotal(0)
+  // }, [orders])
 
   const handleCancelOrder = async (id: number): Promise<void> => {
     try {
       await httpService.del(ORDER_API + `/${id}`)
-      setOrders((pre) => pre.map((e) => (e.id === id ? { ...e, orderStatus: Cancel_Status } : e)))
+      // setOrders((pre) => pre.map((e) => (e.id === id ? { ...e, orderStatus: Cancel_Status } : e)))
+      setOrders((pre) => pre.filter((e) => e.id !== id))
     } catch (error) {
       message.error(showError(error))
     }
   }
 
-  const payBack = (url: string | undefined) => url && router.push(url)
+  const payBack = async (orderId: number) => {
+    try {
+      setPayUrlLoading(true)
+      const url = await httpService.get(ORDER_API + `/${orderId}/repayment`)
+      if (url) router.push(url)
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setPayUrlLoading(false)
+    }
+  }
 
   const setId = (id: number) => setOrderId(id)
 
@@ -111,13 +130,10 @@ export default function Purchase() {
   }
 
   const mutateReview = (orderId: number) => {
-    if (data) {
-      const newItems = data.items.map((item) =>
-        item.id === orderId ? { ...item, reviewed: true } : item,
-      )
-      mutate({ ...data, items: newItems })
-      setOrders(newItems)
-    }
+    const newItems = orders.map((item) =>
+      item.id === orderId ? { ...item, reviewed: true } : item,
+    )
+    setOrders(newItems)
   }
 
   const loadMoreData = () => setParams((pre) => ({ ...pre, page: pre.page + 1 }))
@@ -137,19 +153,23 @@ export default function Purchase() {
   const confirmDelivery = async (id: number) => {
     try {
       await httpService.put(ORDER_API + `/${id}/confirm-delivery`)
-      if (data) {
-        const newItems = data.items.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                orderStatus: Received_Status,
-                reviewDeadline: dayjs().add(15, 'day').toISOString(),
-              }
-            : item,
-        )
-        mutate({ ...data, items: newItems })
-        setOrders(newItems)
+      const newList = orders.filter((item) => item.id !== id)
+      setOrders(newList)
+      if (!newList.length) {
+        setTotal(0)
       }
+      // if (data) {
+      //   const newItems = data.items.map((item) =>
+      //     item.id === id
+      //       ? {
+      //           ...item,
+      //           orderStatus: Received_Status,
+      //           reviewDeadline: dayjs().add(15, 'day').toISOString(),
+      //         }
+      //       : item,
+      //   )
+      //   setOrders(newItems)
+      // }
     } catch (error) {
       message.error(showError(error))
     }
@@ -308,17 +328,18 @@ export default function Purchase() {
                       <div className="mt-2 text-end gap-2">
                         {order.amountPaid < order.total &&
                           order.orderStatus !== Cancel_Status &&
-                          order.payBackUrl && (
+                          order.paymentDeadline && (
                             <div className="flex items-center gap-2">
                               <div>Đơn hàng sẽ bị hủy sau</div>
                               <Countdown
-                                value={getPaymentDeadline(order.orderDate)}
+                                value={new Date(order.paymentDeadline).getTime()}
                                 format="mm:ss"
                                 valueStyle={{ fontSize: '1rem' }}
                                 onFinish={() => handleCancelOrder(order.id)}
                               />
                               <Button
-                                onClick={() => payBack(order.payBackUrl)}
+                                loading={payUrlLoading}
+                                onClick={() => payBack(order.id)}
                                 className="rounded-sm m-1"
                                 type="primary"
                                 danger

@@ -18,8 +18,10 @@ export default async function RootLayout({
       <Layout className="bg-white">
         <Header />
         <Suspense fallback={<Loading />}>
-          <div className="min-h-screen--header lg:container lg:mx-auto transition-all">
-            {children}
+          <div className="bg-gradient-to-l from-teal-50 via-sky-300 to-teal-50">
+            <div className="min-h-screen--header lg:container lg:mx-auto transition-all bg-white">
+              {children}
+            </div>
           </div>
         </Suspense>
         <Footer />

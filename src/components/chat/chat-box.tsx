@@ -187,7 +187,7 @@ export default function ChatBox() {
   const connectChat = async () => {
     try {
       const connect = new HubConnectionBuilder()
-        .withUrl(process.env.NEXT_PUBLIC_API_URL + '/chat')
+        .withUrl(process.env.NEXT_PUBLIC_API_URL + '/hub')
         .withAutomaticReconnect()
         .build()
 

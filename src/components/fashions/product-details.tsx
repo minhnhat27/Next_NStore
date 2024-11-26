@@ -248,7 +248,7 @@ export default function Details({ id }: Props) {
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div className="flex flex-col gap-2">
-              {!currentImage ||
+              {currentImage &&
                 (maxDiscountPercent > 0 ? (
                   <Badge.Ribbon
                     text={`-${maxDiscountPercent}%`}

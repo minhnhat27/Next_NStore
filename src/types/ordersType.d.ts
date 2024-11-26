@@ -17,7 +17,7 @@ interface OrderType {
 
   productOrderDetail?: ProductOrderDetail
 
-  payBackUrl?: string
+  paymentDeadline?: string
 }
 
 interface DeliveryInfo {

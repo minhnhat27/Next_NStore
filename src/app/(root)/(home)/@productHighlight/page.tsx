@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 
 export default function ProductHighlight() {
-  const [list, setList] = useState<ProductType[]>([])
+  const [_, setList] = useState<ProductType[]>([])
   const [featured, setFeatured] = useState<ProductType[]>([])
   const searchParams = useSearchParams()
   const { setRealTimeParams } = useRealTimeParams()

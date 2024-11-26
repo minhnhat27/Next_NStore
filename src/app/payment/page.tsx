@@ -65,8 +65,8 @@ export default function Payment() {
           success = true
         } catch (error) {
           notification.error({
-            message: 'Thanh toán thất bại',
-            description: 'Vui lòng thanh toán lại',
+            message: 'Thất bại',
+            description: 'Thanh toán thất bại',
             className: 'text-red-500',
           })
         } finally {
