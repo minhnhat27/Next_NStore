@@ -52,8 +52,8 @@ export default function Navigation() {
           <Image
             priority
             alt="logo"
-            src="/images/Logo-1x1.png"
-            blurDataURL="/images/Logo-1x1.png"
+            src="/images/Logo-Text-White-1x1.png"
+            blurDataURL="/images/Logo-White-1x1.png"
             width={0}
             height={0}
             sizes="100vw"
@@ -62,7 +62,7 @@ export default function Navigation() {
           />
         </Link>
       </Flex>
-      <ConfigProvider
+      {/* <ConfigProvider
         theme={{
           components: {
             Menu: {
@@ -70,15 +70,15 @@ export default function Navigation() {
             },
           },
         }}
-      >
-        <Menu
-          className="text-nowrap text-lg bg-transparent hidden md:inline-block text-center w-full"
-          items={navigateItems}
-          mode="horizontal"
-          selectedKeys={[pathname]}
-          theme="dark"
-        />
-      </ConfigProvider>
+      > */}
+      <Menu
+        className="text-nowrap text-lg bg-transparent hidden md:inline-block text-center w-full"
+        items={navigateItems}
+        mode="horizontal"
+        selectedKeys={[pathname]}
+        // theme="dark"
+      />
+      {/* </ConfigProvider> */}
 
       <Drawer title="Menu" placement="left" onClose={() => setShowNavbar(false)} open={showNavbar}>
         <Menu

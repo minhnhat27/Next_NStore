@@ -12,13 +12,11 @@ const { Meta } = Card
 
 interface Props extends IProps {
   products?: ProductType[]
-  /** rem */
-  height?: number
-
   object?: 'cover' | 'contain' | 'fill' | 'none'
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-export default function CardProduct({ products, object = 'cover', className }: Props) {
+export default function CardProduct({ products, object = 'cover', className, onClick }: Props) {
   if (!products || products.length === 0) return <Empty className="col-span-full" />
 
   return products.map((product, i) => {
@@ -35,6 +33,7 @@ export default function CardProduct({ products, object = 'cover', className }: P
             pathname: `/fashions/${product.id}`,
             query: { name: product.name },
           }}
+          onClick={onClick}
         >
           <Badge.Ribbon
             text={
@@ -53,7 +52,7 @@ export default function CardProduct({ products, object = 'cover', className }: P
               styles={{
                 body: { padding: '0.75rem' },
               }}
-              classNames={{ cover: className || 'h-48 xs:h-56 md:h-64' }}
+              classNames={{ cover: `h-48 xs:h-56 md:h-64 ${className}` }}
               rootClassName="relative"
               cover={
                 <Image
@@ -115,14 +114,18 @@ export default function CardProduct({ products, object = 'cover', className }: P
     return !product.id ? (
       <Card cover={<Skeleton.Image className="w-full h-36 xs:h-44 md:h-52" active />} loading />
     ) : (
-      <Link key={i} href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}>
+      <Link
+        key={i}
+        href={{ pathname: `/fashions/${product.id}`, query: { name: product.name } }}
+        onClick={onClick}
+      >
         <Card
           loading={!product.id}
           hoverable
           styles={{
             body: { padding: '0.75rem' },
           }}
-          classNames={{ cover: className || 'h-48 xs:h-56 md:h-64' }}
+          classNames={{ cover: `h-48 xs:h-56 md:h-64 ${className}` }}
           rootClassName="relative"
           cover={
             <>

@@ -1,4 +1,4 @@
-import { CameraOutlined } from '@ant-design/icons'
+import { CameraOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import {
   App,
   AutoComplete,
@@ -7,9 +7,11 @@ import {
   Drawer,
   Empty,
   Input,
+  Image as AntdImage,
   Spin,
   Upload,
   UploadProps,
+  UploadFile,
 } from 'antd'
 import debounce from 'debounce'
 import Image from 'next/image'
@@ -21,7 +23,7 @@ import useSWRImmutable from 'swr/immutable'
 import CardProduct from '~/components/ui/card-product'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
-import { showError, toNextImageLink } from '~/utils/common'
+import { getBase64, showError, toNextImageLink } from '~/utils/common'
 
 export default function Search() {
   const { message } = App.useApp()
@@ -30,7 +32,9 @@ export default function Search() {
   const router = useRouter()
 
   const [loading, setLoading] = useState<boolean>(false)
-  const [imageSearchResult, setImageSearchResult] = useState<ProductType[]>([])
+
+  const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [imageSearchResult, setImageSearchResult] = useState<ProductType[] | undefined>(undefined)
 
   const { data, isLoading } = useSWRImmutable<ProductType[]>(
     searchText ? [FASHION_API + '/search', { key: searchText }] : undefined,
@@ -80,9 +84,10 @@ export default function Search() {
     }
   }
 
-  const handleChangeImage: UploadProps['onChange'] = async ({ file }) => {
+  const handleChangeImage: UploadProps['onChange'] = async ({ file, fileList: newList }) => {
     try {
       setLoading(true)
+      setFileList(newList)
       const formData = new FormData()
       const imageFile = file as unknown as Blob
       formData.append('image', imageFile)
@@ -96,6 +101,18 @@ export default function Search() {
     }
   }
 
+  const clearSearch = () => {
+    setSearchText(undefined)
+    setOptions([])
+    setImageSearchResult(undefined)
+    setFileList([])
+  }
+
+  const closeSearch = () => {
+    setShowSearch(false)
+    clearSearch()
+  }
+
   return (
     <>
       <FaSearch
@@ -105,14 +122,11 @@ export default function Search() {
       <Drawer
         title="Tìm kiếm"
         placement="top"
-        onClose={() => setShowSearch(false)}
+        onClose={closeSearch}
         open={showSearch}
         styles={{ wrapper: { height: 'fit-content' } }}
         destroyOnClose
-        afterOpenChange={() => {
-          setSearchText(undefined)
-          setOptions([])
-        }}
+        afterOpenChange={clearSearch}
       >
         <div className="flex items-center gap-2">
           <AutoComplete
@@ -131,20 +145,46 @@ export default function Search() {
               allowClear
             />
           </AutoComplete>
-          <Upload beforeUpload={() => false} showUploadList={false} onChange={handleChangeImage}>
+
+          <Upload
+            accept="image/png, image/gif, image/jpeg, image/svg, image/webp"
+            beforeUpload={() => false}
+            maxCount={1}
+            showUploadList={false}
+            fileList={fileList}
+            onChange={handleChangeImage}
+          >
             <Button disabled={loading} size="large" className="mt-2">
-              <CameraOutlined className="text-xl" />
+              <CameraOutlined className="text-xl text-blue-500" />
             </Button>
           </Upload>
+          {fileList?.[0] && (
+            <div className="relative cursor-pointer select-none group">
+              <AntdImage
+                className="object-cover h-20 w-20 border rounded"
+                src={
+                  fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : ''
+                }
+                alt={fileList[0].name}
+              />
+              <CloseCircleOutlined
+                onClick={() => {
+                  setFileList((pre) => pre.filter((e) => e.uid !== fileList[0].uid))
+                  setImageSearchResult(undefined)
+                }}
+                className="hidden group-hover:block absolute -top-1 -right-1 bg-white rounded-full hover:bg-gray-200"
+              />
+            </div>
+          )}
         </div>
         {loading && (
           <div className="mt-4 flex justify-center">
             <Spin />
           </div>
         )}
-        {!imageSearchResult.length || (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-4">
-            <CardProduct products={imageSearchResult} />
+        {imageSearchResult !== undefined && (
+          <div className="mt-4 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+            <CardProduct onClick={closeSearch} products={imageSearchResult} />
           </div>
         )}
       </Drawer>
