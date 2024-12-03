@@ -26,7 +26,7 @@ import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
 import { FASHION_API } from '~/utils/api-urls'
 import CardProduct from '../ui/card-product'
-import { initFilters } from '~/utils/initType'
+import { initFilters as initFil } from '~/utils/initType'
 import { formatVND } from '~/utils/common'
 
 const { Title } = Typography
@@ -60,6 +60,8 @@ enum FilterEnums {
 const formatter: NonNullable<SliderSingleProps['tooltip']>['formatter'] = (value) =>
   value && formatVND.format(value)
 
+const initFilters: FilterType = { ...initFil, pageSize: 12 }
+
 interface IProps {
   brands: ProductAttrsType[]
   categories: ProductAttrsType[]
@@ -75,7 +77,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
   const [filterOpen, setFilterOpen] = useState<boolean>(false)
 
   const [filters, setFilters] = useState<FilterType>(() => {
-    let p = filtersProp || { ...initFilters }
+    let p = filtersProp || initFilters
 
     const urlParams = new URLSearchParams(searchParams)
     urlParams?.forEach((value, key) => {
@@ -107,7 +109,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
   const [materialOptions, setMaterialOptions] = useState<CheckboxOptionType[]>([])
 
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [pageSize, setPageSize] = useState<number>(10)
+  const [pageSize, setPageSize] = useState<number>(12)
 
   const filtersToParams = (t_filters: FilterType) => {
     let newParams: FilterType = { ...t_filters }
@@ -273,9 +275,9 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
   const handleFilters: ButtonProps['onClick'] = () => {
     setCurrentPage(1)
-    setPageSize(10)
+    setPageSize(12)
 
-    getFilters(filters, 1, 10)
+    getFilters(filters, 1, 12)
     setFilterOpen(false)
   }
 

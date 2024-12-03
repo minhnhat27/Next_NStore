@@ -18,7 +18,7 @@ import { useFacebook } from '~/hooks/useFacebook'
 
 const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['items'] => [
   {
-    key: '/profile',
+    key: '/account/profile',
     label: (
       <Link href="/account/profile">
         <span>
@@ -26,6 +26,10 @@ const dropdownItems = (name?: string, handleLogout?: () => void): MenuProps['ite
         </span>
       </Link>
     ),
+  },
+  {
+    key: '/account/purchase',
+    label: <Link href="/account/purchase">Đơn mua</Link>,
   },
   {
     type: 'divider',

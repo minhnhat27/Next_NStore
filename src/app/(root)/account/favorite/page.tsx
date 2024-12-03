@@ -11,6 +11,7 @@ import {
   Tooltip,
   Rate,
   Watermark,
+  Tag,
 } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -147,6 +148,11 @@ export default function Favorite() {
                                 '(Chưa có đánh giá)'
                               )}
                             </div>
+                            {item.flashSaleDiscountPercent && (
+                              <Tag color="#ef4444" className="m-2 py-0 animate-pulse">
+                                Flash sale
+                              </Tag>
+                            )}
                           </div>
 
                           {item.enable && (

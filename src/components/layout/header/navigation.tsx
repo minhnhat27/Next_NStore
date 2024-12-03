@@ -34,8 +34,8 @@ const navigateItems: MenuItem[] = [
       },
     ],
   },
-  { key: '/sales', label: <Link href="/sales">SALE CỰC NÓNG</Link> },
-  { key: '/new', label: <Link href="/new">MỚI</Link> },
+  { key: '/about', label: <Link href="/about">GIỚI THIỆU</Link> },
+  { key: '/contact', label: <Link href="/contact">LIÊN HỆ</Link> },
 ]
 
 export default function Navigation() {

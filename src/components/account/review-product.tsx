@@ -19,7 +19,7 @@ import { memo, useState } from 'react'
 import { mutate } from 'swr'
 import httpService from '~/lib/http-service'
 import { FASHION_API, ORDER_API } from '~/utils/api-urls'
-import { getBase64, showError, toNextImageLink } from '~/utils/common'
+import { getBase64, rateDesc, showError, toNextImageLink } from '~/utils/common'
 import { initPagination } from '~/utils/initType'
 
 interface IProps {
@@ -231,22 +231,36 @@ const ReviewProduct = ({
                       }}
                     </Form.Item>
                     <Divider className="my-1" />
-                    <Form.Item
-                      layout="horizontal"
-                      label="Chất lượng"
-                      name={[field.name, 'star']}
-                      rules={[
-                        {
-                          validator: (_, value) =>
-                            value < 1
-                              ? Promise.reject(new Error('Tối thiểu 1 sao'))
-                              : Promise.resolve(),
-                        },
-                      ]}
-                      className="mb-0"
-                    >
-                      <Rate count={5} />
-                    </Form.Item>
+                    <div className="flex items-center gap-2">
+                      <Form.Item
+                        layout="horizontal"
+                        label="Chất lượng"
+                        name={[field.name, 'star']}
+                        rules={[
+                          {
+                            validator: (_, value) =>
+                              value < 1
+                                ? Promise.reject(new Error('Tối thiểu 1 sao'))
+                                : Promise.resolve(),
+                          },
+                        ]}
+                        className="mb-0"
+                      >
+                        <Rate count={5} />
+                      </Form.Item>
+                      <Form.Item
+                        noStyle
+                        shouldUpdate={(prev, curr) =>
+                          prev.review[field.name]?.star !== curr.review[field.name]?.star
+                        }
+                        // dependencies={['review', field.name, 'star']}
+                      >
+                        {({ getFieldValue }) => {
+                          const star = getFieldValue(['review', field.name, 'star'])
+                          return <span className="text-xs text-gray-500">{rateDesc[star - 1]}</span>
+                        }}
+                      </Form.Item>
+                    </div>
                     <Form.Item
                       name={[field.name, 'description']}
                       className="mb-1"
@@ -278,6 +292,7 @@ const ReviewProduct = ({
                             beforeUpload={() => false}
                             listType="picture-card"
                             fileList={currentFileList}
+                            maxCount={3}
                             onPreview={handlePreview}
                             onChange={({ fileList }) => handleChange(productId, variant, fileList)}
                           >

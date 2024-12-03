@@ -54,7 +54,7 @@ export default function Reviews({ product }: Props) {
   const [list, setList] = useState<ProductReviewsType[]>([])
 
   const { data, isLoading } = useSWRImmutable<PagedType<ProductReviewsType>>(
-    beginGetReviews ? [FASHION_API + `/${product.id}/reviews`, params] : null,
+    beginGetReviews ? [FASHION_API + `/${product.id}/reviews`, params] : undefined,
     ([url, params]) => httpService.getWithParams(url, params),
   )
 

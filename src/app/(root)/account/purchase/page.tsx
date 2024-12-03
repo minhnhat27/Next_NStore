@@ -318,9 +318,12 @@ export default function Purchase() {
                             <div>
                               {order.productOrderDetail.quantity} x{' '}
                               {formatVND.format(order.productOrderDetail.price)}{' '}
-                              <span className="line-through text-xs">
-                                {formatVND.format(order.productOrderDetail.originPrice)}
-                              </span>
+                              {order.productOrderDetail.price <
+                                order.productOrderDetail.originPrice && (
+                                <span className="line-through text-xs">
+                                  {formatVND.format(order.productOrderDetail.originPrice)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -356,19 +359,16 @@ export default function Purchase() {
                             {dayjs(order.reviewDeadline).diff(dayjs(), 'day') === 0 ? (
                               dayjs(order.reviewDeadline).diff(dayjs(), 'h') === 0 ? (
                                 <span className="text-xs">
-                                  Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'm')} phút để đánh
-                                  giá{' '}
+                                  Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'm')} phút để{' '}
                                 </span>
                               ) : (
                                 <span className="text-xs">
-                                  Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'h')} giờ để đánh
-                                  giá{' '}
+                                  Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'h')} giờ để{' '}
                                 </span>
                               )
                             ) : (
                               <span className="text-xs">
-                                Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'day')} ngày để đánh
-                                giá{' '}
+                                Còn {dayjs(order.reviewDeadline).diff(dayjs(), 'day')} ngày để{' '}
                               </span>
                             )}
 
@@ -479,9 +479,11 @@ export default function Purchase() {
                       <>
                         <div>
                           {item.quantity} x {formatVND.format(item.price)}{' '}
-                          <span className="line-through text-xs">
-                            {formatVND.format(item.originPrice)}
-                          </span>
+                          {item.price < item.originPrice && (
+                            <span className="line-through text-xs">
+                              {formatVND.format(item.originPrice)}
+                            </span>
+                          )}
                         </div>
                         <div>Thành tiền: {formatVND.format(item.price * item.quantity)}</div>
                         <div className="text-gray-500 font-semibold">Phân loại: {item.variant}</div>

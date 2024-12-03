@@ -84,6 +84,9 @@ export const searchAddress = (input: string, option?: ValueLabelType) => {
 export const toNextImageLink = (url: string | undefined): string =>
   url ? '/api/images?imageUrl=' + encodeURIComponent(url) : '/images/broken.png'
 
+export const toExternalNextImage = (url: string | undefined): string =>
+  url ? '/api/images/external?imageUrl=' + encodeURIComponent(url) : '/images/broken.png'
+
 export const shippingPrice = (price: number): number =>
   price >= 400000 || price === 0 ? 0 : price >= 200000 ? 10000 : 30000
 

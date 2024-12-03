@@ -457,6 +457,8 @@ export default function CartDetails({ paymentMethods }: IProps) {
         const newCart = cartItems.filter((e) => !checkedItems.some((x) => x.id === e.id))
 
         mutate([`${CART_API}/count`, state.userInfo?.session], newCart.length)
+        if (voucher) setVoucher(undefined)
+
         setCartItems(newCart)
         cart_mutate(newCart)
 
