@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, ConfigProvider, Drawer, Flex, Menu, MenuProps } from 'antd'
+import { Button, Drawer, Menu, MenuProps } from 'antd'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
@@ -44,9 +44,13 @@ export default function Navigation() {
 
   return (
     <>
-      <Flex align="center" className="shrink-0">
-        <Button type="text" className="md:hidden p-0" onClick={() => setShowNavbar(!showNavbar)}>
-          <MenuUnfoldOutlined className="text-white text-xl" />
+      <div className="flex items-center shrink-0">
+        <Button
+          type="text"
+          className="md:hidden p-0 mx-1"
+          onClick={() => setShowNavbar(!showNavbar)}
+        >
+          <MenuUnfoldOutlined className="text-gray-700 text-xl" />
         </Button>
         <Link href="/" className="flex items-center">
           <Image
@@ -61,7 +65,7 @@ export default function Navigation() {
             className="w-24 h-auto max-h-24"
           />
         </Link>
-      </Flex>
+      </div>
       {/* <ConfigProvider
         theme={{
           components: {

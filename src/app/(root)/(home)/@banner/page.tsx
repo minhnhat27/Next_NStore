@@ -19,7 +19,12 @@ export default async function Banner() {
   const images = await getBanner()
 
   return (
-    <Carousel arrows autoplay className="transition-all h-48 sm:h-screen--header 2xl:h-[36rem]">
+    <Carousel
+      infinite
+      arrows
+      autoplay
+      className="transition-all h-48 sm:h-screen--header 2xl:h-[36rem]"
+    >
       {images.map((url, i) => (
         <Image
           key={i}

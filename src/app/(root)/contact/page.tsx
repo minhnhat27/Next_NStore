@@ -1,5 +1,7 @@
 import { Button } from 'antd'
 
+export const dynamic = 'force-static'
+
 type Section = { title: string; description: string; phone: string }
 
 const sections: Section[] = [

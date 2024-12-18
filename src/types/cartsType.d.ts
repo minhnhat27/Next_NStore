@@ -38,5 +38,6 @@ interface VoucherType {
   discountAmount?: number
   minOrder: number
   maxDiscount: number
-  endDate: Date
+  startDate: string
+  endDate: string
 }

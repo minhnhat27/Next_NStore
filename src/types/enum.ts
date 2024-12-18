@@ -7,9 +7,9 @@ export enum AuthTypeEnum {
 export enum OrderStatus {
   'Đang xử lý',
   'Đã xác nhận',
-  'Chờ lấy hàng',
+  // 'Chờ lấy hàng',
   'Đang vận chuyển',
-  'Đang giao hàng',
+  // 'Đang giao hàng',
   'Đã nhận hàng',
   'Đã hủy',
   'Tất cả',
@@ -18,9 +18,9 @@ export enum OrderStatus {
 export enum OrderStatusColor {
   'text-yellow-500',
   'text-blue-500',
-  'text-teal-500',
+  // 'text-teal-500',
   'text-purple-500',
-  'text-orange-500',
+  // 'text-orange-500',
   'text-green-500',
   'text-red-500',
 }
@@ -28,9 +28,9 @@ export enum OrderStatusColor {
 export enum OrderStatusTag {
   'yellow',
   'blue',
-  'cyan',
+  // 'cyan',
   'purple',
-  'orange',
+  // 'orange',
   'green',
   'red',
 }
@@ -38,9 +38,9 @@ export enum OrderStatusTag {
 export enum OrderStatusTagColor {
   '#eab308',
   '#3b82f6',
-  '#14b8a6',
+  // '#14b8a6',
   '#a855f7',
-  '#f97316',
+  // '#f97316',
   '#22c55e',
   '#f43f5e', //"#ef4444"
 }

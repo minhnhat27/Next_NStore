@@ -33,6 +33,7 @@ export default function Heart({ productId, label = false, className }: Props) {
         <Button
           onClick={async (e) => {
             e.preventDefault()
+            e.stopPropagation()
             await onRemoveFavorite()
           }}
           type="link"
@@ -51,6 +52,7 @@ export default function Heart({ productId, label = false, className }: Props) {
       <Button
         onClick={async (e) => {
           e.preventDefault()
+          e.stopPropagation()
           await onAddFavorite()
         }}
         type="link"

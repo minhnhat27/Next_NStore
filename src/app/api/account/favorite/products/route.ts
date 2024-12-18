@@ -4,6 +4,7 @@ import { authHeader } from '~/lib/auth-service'
 import { NextError, NextSuccess } from '~/lib/next-response'
 
 const API_URL = process.env.API_URL + '/api/account'
+export const revalidate = 0
 
 export async function GET(req: NextRequest) {
   try {

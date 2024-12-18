@@ -118,11 +118,11 @@ export default function ChatBox() {
       return Upload.LIST_IGNORE
     }
 
-    const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
-    if (file.size > maxSizeInBytes) {
-      message.error('Kích thước ảnh không vượt quá 2MB!')
-      return Upload.LIST_IGNORE
-    }
+    // const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+    // if (file.size > maxSizeInBytes) {
+    //   message.error('Kích thước ảnh không vượt quá 3MB!')
+    //   return Upload.LIST_IGNORE
+    // }
   }
 
   const handleSendMessage: FormProps['onFinish'] = async (values) => {
@@ -152,8 +152,9 @@ export default function ChatBox() {
         }
         form.resetFields()
         setFileList([])
-        await connection.invoke('SendToAdmin', newSession, values.content, image)
+
         setMessages((pre) => [...pre, m])
+        await connection.invoke('SendToAdmin', newSession, values.content, image)
       }
     } catch (error) {
       console.log(error)

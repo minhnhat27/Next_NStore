@@ -52,7 +52,7 @@ export default function CardProduct({ products, object = 'cover', className, onC
               styles={{
                 body: { padding: '0.75rem' },
               }}
-              classNames={{ cover: `h-48 xs:h-56 md:h-64 ${className}` }}
+              classNames={{ cover: `h-56 xs:h-64 md:h-72 ${className}` }}
               rootClassName="relative"
               cover={
                 <Image
@@ -125,7 +125,7 @@ export default function CardProduct({ products, object = 'cover', className, onC
           styles={{
             body: { padding: '0.75rem' },
           }}
-          classNames={{ cover: `h-48 xs:h-56 md:h-64 ${className}` }}
+          classNames={{ cover: `h-56 xs:h-64 md:h-72 ${className}` }}
           rootClassName="relative"
           cover={
             <>

@@ -1,6 +1,8 @@
 import Image from 'next/image'
 import { toExternalNextImage, toNextImageLink } from '~/utils/common'
 
+export const dynamic = 'force-static'
+
 const teamMembers = [
   {
     name: 'John Doe',

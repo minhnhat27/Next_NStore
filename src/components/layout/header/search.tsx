@@ -117,14 +117,17 @@ export default function Search() {
     <>
       <FaSearch
         onClick={() => setShowSearch(!showSearch)}
-        className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 "
+        className="flex-shrink-0 transition-colors text-gray-500 hover:text-gray-400 "
       />
       <Drawer
         title="Tìm kiếm"
         placement="top"
         onClose={closeSearch}
         open={showSearch}
-        styles={{ wrapper: { height: 'fit-content' } }}
+        styles={{
+          content: { height: 'fit-content' },
+          wrapper: { height: 'fit-content' },
+        }}
         destroyOnClose
         afterOpenChange={clearSearch}
       >

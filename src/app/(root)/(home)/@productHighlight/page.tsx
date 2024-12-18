@@ -61,7 +61,7 @@ export default function ProductHighlight() {
 
   return (
     <>
-      <div className="px-4 pb-6 grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+      <div className="px-4 pb-6 grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
         {loading ? (
           [...Array(pageSize)].map((_, i) => (
             <Skeleton.Image active className="h-48 xs:h-56 md:h-64 w-full" key={i} />

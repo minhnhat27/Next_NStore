@@ -22,6 +22,8 @@ export default async function PopularBrands() {
 
   const brands = await getPopularBrands()
 
+  if (!brands?.length) return null
+
   return (
     <div className="bg-gray-300 py-6">
       <div className="text-center pb-6 font-semibold text-xl md:text-3xl text-blue-950 font-sans">
@@ -34,7 +36,7 @@ export default async function PopularBrands() {
             infinite
             autoplay
             dots={false}
-            slidesToShow={brands.length > 5 ? 5 : brands.length}
+            slidesToShow={5}
             responsive={[
               { breakpoint: 480, settings: { slidesToShow: 2 } },
               { breakpoint: 768, settings: { slidesToShow: 3 } },

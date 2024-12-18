@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 export default async function WomenFashions() {
   const filters: FilterType = {
     ...initFilters,
+    pageSize: 12,
     genders: [Gender.Nữ.toString()],
   }
 

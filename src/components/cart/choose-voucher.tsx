@@ -8,6 +8,7 @@ import httpService from '~/lib/http-service'
 import { VOUCHER_API } from '~/utils/api-urls'
 import { formatDate, formatVND, showError } from '~/utils/common'
 import Voucher from '../ui/voucher'
+import dayjs from 'dayjs'
 
 interface IProps {
   session?: string
@@ -127,7 +128,7 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
         </div>
         <div className="max-h-[55vh] overflow-y-auto">
           {isLoading &&
-            [...Array(2)].map((_, i) => (
+            [...new Array(2)].map((_, i) => (
               <div key={i} className="flex gap-2 mt-2">
                 <Skeleton.Image active />
                 <Skeleton active paragraph={{ rows: 2 }} />
@@ -141,20 +142,30 @@ export default function ChooseVoucher({ session, cartPrice, voucher, onChooseVou
                 <Voucher
                   voucher={v}
                   key={i}
-                  disabled={cartPrice < v.minOrder || loading}
+                  disabled={cartPrice < v.minOrder || loading || new Date(v.startDate) > new Date()}
                   onClick={() =>
                     selected?.code === v.code ? setSelected(undefined) : setSelected(v)
                   }
                   className={selected?.code === v.code ? 'text-red-500' : ''}
                 >
-                  {cartPrice < v.minOrder && (
+                  {cartPrice < v.minOrder ? (
                     <>
                       <Divider className="my-2" />
-                      <div className="text-xs truncate">
+                      <div className="text-xs truncate text-center">
                         <WarningOutlined className="text-yellow-500" /> Mua thêm{' '}
                         {formatVND.format(v.minOrder - cartPrice)} để sử dụng mã giảm giá
                       </div>
                     </>
+                  ) : (
+                    new Date(v.startDate) > new Date() && (
+                      <>
+                        <Divider className="my-2" />
+                        <div className="text-xs truncate text-center">
+                          <WarningOutlined className="text-yellow-500" /> Có thể áp dụng từ{' '}
+                          {formatDate(v.startDate)}
+                        </div>
+                      </>
+                    )
                   )}
                 </Voucher>
               ))

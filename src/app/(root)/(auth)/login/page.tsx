@@ -3,7 +3,7 @@
 import { App, Button, Divider, Form, FormProps, Input, Typography } from 'antd'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import useAuth from '~/hooks/useAuth'
 
@@ -13,6 +13,7 @@ import httpService from '~/lib/http-service'
 import { AUTH_API } from '~/utils/api-urls'
 import LoginGoogle from '~/components/external-login/google'
 import LoginFacebook from '~/components/external-login/facebook'
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 
 const { Title } = Typography
 
@@ -25,7 +26,10 @@ export default function Login() {
   const redirect = searchParams.get('redirect')
 
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
+
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const { executeRecaptcha } = useGoogleReCaptcha()
 
   const onSuccessLogin = (data: UserInfoType) => {
     dispatch(AuthActions.LOGIN(data))
@@ -48,6 +52,11 @@ export default function Login() {
   const handleSubmitLogin: FormProps<LoginType>['onFinish'] = async (values: LoginType) => {
     try {
       startLoading()
+      if (executeRecaptcha) {
+        const token = await executeRecaptcha()
+        await httpService.post(AUTH_API + '/verify-recaptcha', { token })
+      }
+
       const data: UserInfoType = await httpService.post(AUTH_API + '/login', values)
       onSuccessLogin(data)
     } catch (error: any) {
@@ -83,6 +92,7 @@ export default function Login() {
           rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
         >
           <Input.Password
+            allowClear
             prefix={<LockOutlined className="text-gray-400" />}
             placeholder="Password"
             size="large"

@@ -229,7 +229,7 @@ export default function Details({ id }: Props) {
     )
   }
 
-  if (error)
+  if (error || !product?.enable)
     return (
       <Result
         status={404}

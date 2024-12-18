@@ -41,8 +41,11 @@ const { Countdown } = Statistic
 
 const Processing_Status = OrderStatus['Đang xử lý']
 const Cancel_Status = OrderStatus['Đã hủy']
-const BeingDelivered_Status = OrderStatus['Đang giao hàng']
+// const BeingDelivered_Status = OrderStatus['Đang giao hàng']
+const Shipping_Status = OrderStatus['Đang vận chuyển']
 const Received_Status = OrderStatus['Đã nhận hàng']
+
+const All_Status = OrderStatus['Tất cả']
 
 export default function Purchase() {
   const { state } = useAuth()
@@ -62,10 +65,7 @@ export default function Purchase() {
 
   const [params, setParams] = useState<PaginationType & { orderStatus?: number }>(() => {
     let orderStatus: number | undefined = Number(searchParams.get('orderStatus')) ?? 0
-    if (orderStatus === 7) {
-      orderStatus = undefined
-    }
-
+    if (orderStatus === All_Status) orderStatus = undefined
     return {
       page: 1,
       pageSize: 5,
@@ -75,10 +75,9 @@ export default function Purchase() {
 
   const [total, setTotal] = useState<number>(5)
 
-  const { data, mutate, isValidating } = useSWR<PagedType<OrderType>>(
+  const { data } = useSWR<PagedType<OrderType>>(
     [ORDER_API, session, params],
     ([ORDER_API, session, params]) => httpService.getWithSessionParams(ORDER_API, session, params),
-    { revalidateOnMount: true },
   )
 
   const { data: order_details, isLoading: order_details_load } = useSWRImmutable<OrderDetailsType>(
@@ -180,7 +179,7 @@ export default function Purchase() {
     let orderStatus: number | undefined = Number(value)
     setRealTimeParams({ orderStatus })
 
-    if (orderStatus === 7) orderStatus = undefined
+    if (orderStatus === All_Status) orderStatus = undefined
     setParams((pre) => ({ ...pre, page: 1, orderStatus }))
   }
 
@@ -388,7 +387,7 @@ export default function Purchase() {
                             </>
                           )
                         )}
-                        {order.orderStatus === BeingDelivered_Status && (
+                        {order.orderStatus === Shipping_Status && (
                           <Popconfirm
                             title="Xác nhận đã nhận hàng"
                             onConfirm={() => confirmDelivery(order.id)}

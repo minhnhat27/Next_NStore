@@ -387,7 +387,14 @@ export default function CartDetails({ paymentMethods }: IProps) {
     if (!selected) setVoucher(undefined)
     else {
       const today = new Date()
-      if (selected.endDate < today) return false
+      if (new Date(selected.startDate) > today) {
+        message.error('Mã giảm giá chưa đến ngày bắt đầu')
+        return false
+      }
+      if (new Date(selected.endDate) < today) {
+        message.error('Mã giảm giá đã hết hạn')
+        return false
+      }
       if (total.originTotal - total.discount < selected.minOrder) return false
 
       setVoucher(selected)

@@ -33,8 +33,8 @@ export default function Voucher({ voucher, className, disabled, children, onClic
               {voucher.discountPercent && `tối đa ${formatVND.format(voucher.maxDiscount)}`}
             </div>
             <div>Đơn tối thiểu {formatVND.format(voucher.minOrder)}</div>
-            <div className="mt-1 text-xs font-semibold text-end">
-              HSD: {formatDate(voucher.endDate)}
+            <div className="mt-1 text-[0.65rem] font-semibold text-end">
+              HSD: {formatDate(voucher.startDate)} đến {formatDate(voucher.endDate)}
             </div>
             {children}
           </div>

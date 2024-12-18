@@ -8,7 +8,6 @@ import {
   Checkbox,
   CheckboxOptionType,
   Drawer,
-  Flex,
   Pagination,
   PaginationProps,
   Rate,
@@ -20,7 +19,7 @@ import {
   Typography,
 } from 'antd'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import useSWRImmutable from 'swr/immutable'
 import { useRealTimeParams } from '~/hooks/useRealTimeParams'
 import httpService from '~/lib/http-service'
@@ -78,6 +77,8 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
   const [filters, setFilters] = useState<FilterType>(() => {
     let p = filtersProp || initFilters
+    let newFilters = { ...p }
+    if (key) newFilters = { ...p, key }
 
     const urlParams = new URLSearchParams(searchParams)
     urlParams?.forEach((value, key) => {
@@ -87,21 +88,21 @@ export default function Products({ brands, categories, material, filtersProp }: 
         key === FilterEnums.BRANDS ||
         key === FilterEnums.GENDERS
       ) {
-        p[key] = value.split(',').map((v) => v.trim())
+        newFilters[key] = value.split(',').map((v) => v.trim())
       } else if (key === 'maxPrice' || key === 'minPrice' || key === 'page' || key === 'pageSize') {
-        p[key] = parseInt(value)
-      } else p[key] = value
+        newFilters[key] = parseInt(value)
+      } else newFilters[key] = value
     })
 
-    if (p.maxPrice) {
-      p.priceRange = [p.minPrice ?? 0, p.maxPrice]
-    } else if (p.minPrice) {
-      p.priceRange = [p.minPrice, p.minPrice]
+    if (newFilters.maxPrice) {
+      newFilters.priceRange = [newFilters.minPrice ?? 0, newFilters.maxPrice]
+    } else if (newFilters.minPrice) {
+      newFilters.priceRange = [newFilters.minPrice, newFilters.minPrice]
     } else {
-      p.priceRange = undefined
+      newFilters.priceRange = undefined
     }
 
-    return p
+    return newFilters
   })
 
   const [brandOptions, setBrandOptions] = useState<CheckboxOptionType[]>([])
@@ -146,21 +147,60 @@ export default function Products({ brands, categories, material, filtersProp }: 
     return newFilters
   }
 
-  const countFilter = (t_filters: FilterType): number => {
-    const count_filters = deleteFilterInProps(filtersToParams(t_filters))
+  // const deleteFilterInProps = useCallback(
+  //   (ft: FilterType) => {
+  //     const newFilters = { ...ft }
+  //     if (filtersProp) {
+  //       return Object.fromEntries(
+  //         Object.entries(newFilters).filter(
+  //           ([key, value]) => value !== initFilters[key as keyof FilterType],
+  //         ),
+  //       )
+  //     }
+  //     return newFilters
+  //   },
+  //   [filtersProp],
+  // )
 
-    const count = Object.values(count_filters).reduce((pre, value) => {
-      if (Array.isArray(value)) {
-        return pre + value.length
+  const countFilter = useCallback(
+    (t_filters: FilterType): number => {
+      const count_filters = Object.fromEntries(
+        Object.entries(filtersToParams(t_filters)).filter(
+          ([key, value]) => value !== initFilters[key as keyof FilterType],
+        ),
+      ) as FilterType
+
+      const count = Object.values(count_filters).reduce((pre, value) => {
+        if (Array.isArray(value)) {
+          return pre + value.length
+        }
+        return value !== null && value !== undefined ? pre + 1 : pre
+      }, 0)
+
+      let minus = 0
+      if (count_filters.key || count_filters.key === '') minus += 1
+
+      if (filtersProp) {
+        const fil = Object.fromEntries(
+          Object.entries(filtersProp).filter(
+            ([key, value]) => value !== initFilters[key as keyof FilterType],
+          ),
+        ) as FilterType
+
+        const filtersPropCount = Object.values(fil).reduce((pre, value) => {
+          if (Array.isArray(value)) {
+            return pre + value.length
+          }
+          return value !== null && value !== undefined ? pre + 1 : pre
+        }, 0)
+        minus += filtersPropCount
       }
-      return value !== null && value !== undefined ? pre + 1 : pre
-    }, 0)
 
-    let minus = 3
-    if (count_filters.key || count_filters.key === '') minus += 1
-
-    return count >= minus ? count - minus : count
-  }
+      // return count >= minus ? count - minus : count
+      return count - minus
+    },
+    [filtersProp],
+  )
 
   const [params, setParams] = useState<FilterType>(filtersToParams(filters))
 
@@ -203,27 +243,14 @@ export default function Products({ brands, categories, material, filtersProp }: 
   }
 
   const deleteFalsy = (p: FilterType) => {
+    const newP = { ...p }
     Object.keys(p).forEach((key) => {
-      if (!p[key]) {
-        delete p[key]
+      if (!newP[key]) {
+        delete newP[key]
       }
     })
-    return p
+    return newP
   }
-
-  const deleteFilterInProps = useCallback(
-    (ft: FilterType) => {
-      if (filtersProp) {
-        Object.keys(filtersProp).forEach((key) => {
-          if (ft[key] !== initFilters[key as keyof FilterType]) {
-            delete ft[key]
-          }
-        })
-      }
-      return ft
-    },
-    [filtersProp],
-  )
 
   const getFilters = useCallback(
     (filters: FilterType, p?: number, pSize?: number) => {
@@ -235,20 +262,20 @@ export default function Products({ brands, categories, material, filtersProp }: 
 
       setParams(newParams)
 
-      let filteredFilters = Object.fromEntries(
-        Object.entries(newParams).filter(
-          ([key, value]) => value !== initFilters[key as keyof FilterType],
-        ),
-      ) as FilterType
+      // const filteredFilters = Object.fromEntries(
+      //   Object.entries(newParams).filter(
+      //     ([key, value]) => value !== initFilters[key as keyof FilterType],
+      //   ),
+      // ) as FilterType
 
-      setRealTimeParams(deleteFilterInProps(filteredFilters))
+      setRealTimeParams(newParams)
     },
-    [currentPage, pageSize, deleteFilterInProps, setRealTimeParams],
+    [currentPage, pageSize, setRealTimeParams],
   )
 
   useEffect(() => {
     if (key) {
-      const newFilters = { ...filters, key: key }
+      const newFilters = { ...filters, key }
       setFilters(newFilters)
       getFilters(newFilters)
     }
@@ -369,7 +396,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
           <div className="text-2xl font-semibold text-nowrap">Tất cả sản phẩm:</div>
           <div className="text-base">{showFilters()}</div>
         </div>
-        <Flex align="center" className="space-x-2">
+        <div className="flex items-center gap-2">
           <Select
             disabled={data && data.items.length <= 0}
             placeholder="Sắp xếp theo: "
@@ -385,7 +412,7 @@ export default function Products({ brands, categories, material, filtersProp }: 
               <FunnelPlotOutlined /> Bộ lọc
             </Button>
           </Badge>
-        </Flex>
+        </div>
       </div>
       {!data || !data?.items.length ? (
         <Result
@@ -405,7 +432,6 @@ export default function Products({ brands, categories, material, filtersProp }: 
             <CardProduct products={data?.items} className="h-56 xs:h-64 lg:h-72" />
           </div>
           <Pagination
-            hideOnSinglePage
             align="center"
             className="py-4"
             current={currentPage}

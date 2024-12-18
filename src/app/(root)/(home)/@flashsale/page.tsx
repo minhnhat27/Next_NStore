@@ -70,8 +70,8 @@ export default function Flashsale() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-5 gap-4 px-2">
-        {[...new Array(5)].map((_, i) => (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 px-2">
+        {[...new Array(6)].map((_, i) => (
           <Skeleton.Image className="h-64 w-full" active key={i} />
         ))}
       </div>
@@ -81,7 +81,7 @@ export default function Flashsale() {
   return (
     <>
       <Divider>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center items-center gap-2 text-center">
           <div className="my-6 font-bold text-xl md:text-3xl text-orange-600 font-sans flex items-center gap-2">
             Flash Sale
             <BsFire className="text-red-600 animate-pulse" />
@@ -102,7 +102,7 @@ export default function Flashsale() {
             Khung giờ tiếp theo: <span className="text-red-500">{nextTimeFrame()}</span>
           </>
         ) : (
-          !data?.products.length && 'Không có sản phẩm tham gia chương trình'
+          !data?.products.length && <span>Không có sản phẩm tham gia chương trình</span>
         )}
       </Divider>
       {/* <Tabs defaultActiveKey={getTimeFrameNow()} type="card" items={tabItems} /> */}

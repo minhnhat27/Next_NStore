@@ -241,6 +241,7 @@ const Register: React.FC = () => {
               ]}
             >
               <Input.Password
+                allowClear
                 prefix={<LockOutlined className="text-gray-400" />}
                 placeholder="Mật khẩu"
                 size="large"
@@ -261,6 +262,7 @@ const Register: React.FC = () => {
               ]}
             >
               <Input.Password
+                allowClear
                 prefix={<LockOutlined className="text-gray-400" />}
                 placeholder="Xác nhận mật khẩu"
                 size="large"

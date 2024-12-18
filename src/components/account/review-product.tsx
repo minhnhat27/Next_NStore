@@ -34,7 +34,7 @@ interface IProps {
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0]
 
 type ReviewType = {
-  productId: number
+  productId?: number
   variant: string
   productName?: string
   description?: string
@@ -190,17 +190,14 @@ const ReviewProduct = ({
         {order_details && (
           <Form.List
             initialValue={order_details.productOrderDetails.map((value) => {
-              if (value.productId) {
-                const data: ReviewType = {
-                  productId: value.productId,
-                  productName: value.productName,
-                  star: 5,
-                  variant: value.variant,
-                  imageUrl: value.imageUrl,
-                }
-                return data
+              const data: ReviewType = {
+                productId: value.productId,
+                productName: value.productName,
+                star: 5,
+                variant: value.variant,
+                imageUrl: value.imageUrl,
               }
-              return null
+              return data
             })}
             name="review"
           >
@@ -213,6 +210,7 @@ const ReviewProduct = ({
                         const imageUrl = getFieldValue(['review', field.name, 'imageUrl'])
                         const productName = getFieldValue(['review', field.name, 'productName'])
                         const variant = getFieldValue(['review', field.name, 'variant'])
+
                         return (
                           <div className="flex items-center gap-2">
                             <Image

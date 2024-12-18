@@ -80,20 +80,20 @@ export default function RightBar() {
             menu={{ items: dropdownItems(state.userInfo?.fullname, handleLogout) }}
             trigger={['click']}
           >
-            <span className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 ">
+            <span className="flex-shrink-0 transition-colors text-gray-500 hover:text-gray-400 ">
               <FaUser />
             </span>
           </Dropdown>
         ) : (
           <Link href="/login">
-            <span className="flex-shrink-0 transition-colors text-slate-400 hover:text-slate-500 ">
+            <span className="flex-shrink-0 transition-colors text-gray-500 hover:text-gray-400 ">
               <FaUser />
             </span>
           </Link>
         )}
         <Badge count={data ?? 0} size="small">
           <Link href="/cart">
-            <FaShoppingBag className="text-slate-400 hover:text-slate-500 transition-colors text-xl" />
+            <FaShoppingBag className="text-gray-500 hover:text-gray-400 transition-colors text-xl" />
           </Link>
         </Badge>
       </Flex>

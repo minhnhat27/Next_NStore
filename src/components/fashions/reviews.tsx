@@ -131,7 +131,7 @@ export default function Reviews({ product }: Props) {
             <div className="col-span-1">Thương hiệu</div>
             <div className="col-span-5">{product.brandName}</div>
             <div className="col-span-1">Mô tả</div>
-            <pre className="col-span-5">
+            <pre className="col-span-5 text-wrap">
               {product.description || 'Chưa có mô tả'}
               {/* {description
                   ? description?.split('\n').length > 5 && !isShowMore
